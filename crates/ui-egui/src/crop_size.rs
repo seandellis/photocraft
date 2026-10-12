@@ -15,7 +15,7 @@
 //!   with the Crop tool, [`keys`]) fills them with the active document's size in px and its
 //!   resolution; Clear empties them; ⇄ and X swap W and H.
 
-use egui::{Modifiers, Stroke, StrokeKind, vec2};
+use egui::{Modifiers, vec2};
 use photocraft_engine::prefs::Unit;
 use serde_json::{Value, json};
 
@@ -272,11 +272,10 @@ fn text_field(ui: &mut egui::Ui, id: &str, value: &mut String, hint: &str, width
     let mut buf = ui.data(|d| d.get_temp::<String>(id)).unwrap_or_else(|| value.clone());
     let (rect, _) = ui.allocate_exact_size(vec2(width, 24.0), egui::Sense::hover());
     crate::widgets::surface(ui, rect, t.field, false);
-    if !t.bevel {
-        ui.painter().rect_stroke(rect, t.radius_sm, Stroke::new(1.0, t.field_border), StrokeKind::Inside);
-    }
     let inner = rect.shrink2(vec2(4.0, 2.0));
     let r = ui.put(inner, egui::TextEdit::singleline(&mut buf).id(id).char_limit(32).hint_text(hint).frame(egui::Frame::NONE).font(crate::theme::mono(12.0)));
+    // Accent ring on the outer box once focus is known (not the nested TextEdit rect).
+    crate::widgets::field_outline(ui, rect, r.has_focus());
     if r.has_focus() {
         ui.data_mut(|d| d.insert_temp(id, buf));
         return false;

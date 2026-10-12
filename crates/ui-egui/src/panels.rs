@@ -3383,9 +3383,6 @@ fn hex_edit(ui: &mut egui::Ui, id: egui::Id, color: &mut [f32; 4]) -> bool {
     let t = Tokens::get(ui.ctx());
     let (rect, _) = ui.allocate_exact_size(vec2(64.0, 24.0), Sense::hover());
     widgets::surface(ui, rect, t.field, false);
-    if !t.bevel {
-        ui.painter().rect_stroke(rect, t.radius_sm, Stroke::new(1.0, t.field_border), StrokeKind::Inside);
-    }
     let [r, g, b] = srgb_bytes(*color);
     let typing = if ui.memory(|m| m.has_focus(id)) { ui.data(|d| d.get_temp::<String>(id)) } else { None };
     let mut text = typing.unwrap_or_else(|| format!("{r:02X}{g:02X}{b:02X}"));
@@ -3395,6 +3392,8 @@ fn hex_edit(ui: &mut egui::Ui, id: egui::Id, color: &mut [f32; 4]) -> bool {
     // `Frame::NONE`: the themed surface above is this field's frame.
     let resp =
         child.add(egui::TextEdit::singleline(&mut text).id(id).char_limit(7).desired_width(field.width()).frame(egui::Frame::NONE).font(theme::mono(12.0)));
+    // Accent ring on the outer box once focus is known (not the nested TextEdit rect).
+    widgets::field_outline(ui, rect, resp.has_focus());
     if resp.has_focus() {
         ui.data_mut(|d| d.insert_temp(id, text.clone()));
     } else {

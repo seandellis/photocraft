@@ -56,6 +56,18 @@ pub fn surface(ui: &Ui, rect: Rect, fill: Color32, raised: bool) {
     }
 }
 
+/// Border of a themed field box on its outer `rect`: accent when focused (same colour as text
+/// selection), otherwise `field_border`. Classic bevel themes skip the idle stroke (the bevel is
+/// the frame) but still get the accent ring while focused.
+pub fn field_outline(ui: &Ui, rect: Rect, focused: bool) {
+    let t = Tokens::get(ui.ctx());
+    if !focused && t.bevel {
+        return;
+    }
+    let (width, color) = if focused { (1.5, t.accent) } else { (1.0, t.field_border) };
+    ui.painter().rect_stroke(rect, t.radius_sm, Stroke::new(width, color), StrokeKind::Inside);
+}
+
 /// A dock card: rounded container with a header of pill tabs and optional trailing actions.
 /// Returns the index of the selected tab.
 pub fn card(ui: &mut Ui, id: &str, tabs: &[&str], selected: &mut usize, body: impl FnOnce(&mut Ui, usize)) {
@@ -461,9 +473,6 @@ fn value_field_box(
         None => crate::numeric_expression::Units { unit: unit_of_suffix(typed_suffix), suffix: typed_suffix, dpi, ppi },
     };
     surface(ui, rect, t.field, false);
-    if !t.bevel {
-        ui.painter().rect_stroke(rect, t.radius_sm, Stroke::new(1.0, t.field_border), StrokeKind::Inside);
-    }
     // The number's slot ends 1 pt left of the suffix, by its measured width (the suffix is drawn
     // 6 pt from the right edge), so a one-character unit like `%` leaves the number room (#3040).
     let suffix_font = theme::mono(11.0);
@@ -484,11 +493,17 @@ fn value_field_box(
     let mut resp = {
         let ui = &mut child;
         {
-            ui.style_mut().visuals.widgets.inactive.bg_fill = Color32::TRANSPARENT;
-            ui.style_mut().visuals.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
-            ui.style_mut().visuals.widgets.inactive.bg_stroke = Stroke::NONE;
-            ui.style_mut().visuals.widgets.hovered.bg_stroke = Stroke::NONE;
-            ui.style_mut().visuals.widgets.hovered.weak_bg_fill = Color32::TRANSPARENT;
+            // Clear every widget state's fill/stroke so a focused DragValue's nested TextEdit
+            // does not paint its own (offset) focus frame; the outer `rect` owns the border.
+            {
+                let w = &mut ui.style_mut().visuals.widgets;
+                for wv in [&mut w.inactive, &mut w.hovered, &mut w.active, &mut w.open] {
+                    wv.bg_fill = Color32::TRANSPARENT;
+                    wv.weak_bg_fill = Color32::TRANSPARENT;
+                    wv.bg_stroke = Stroke::NONE;
+                    wv.expansion = 0.0;
+                }
+            }
             ui.style_mut().override_font_id = Some(font);
             // The theme's interact height (24) is taller than the number's slot: the DragValue
             // would grow past the slot's bottom and sit low, or spill out of a slim box (#2823).
@@ -540,6 +555,9 @@ fn value_field_box(
         crate::field_tab::select_all(ui.ctx(), resp.id, &if fine { fmt_num2(f64::from(*value)) } else { fmt_num(f64::from(*value)) });
         resp.mark_changed();
     }
+    // After the number (and any focus request): accent ring sits on the outer box, not the
+    // nested TextEdit's smaller rect.
+    field_outline(ui, rect, resp.has_focus());
     (resp, rect)
 }
 
@@ -1683,6 +1701,31 @@ mod tests {
                 assert!(field.contains_rect(number), "{what}");
                 assert!((field.center().y - number.center().y - 1.0).abs() < 0.51, "{what}");
             }
+        }
+    }
+
+    /// Focus must not let the nested TextEdit grow past the outer box (the accent ring is painted
+    /// on that outer rect, not on an offset inner frame).
+    #[test]
+    fn focused_value_field_number_stays_inside_its_outer_box() {
+        for kind in crate::theme::ThemeKind::ALL {
+            let mut harness = Harness::new_ui_state(
+                |ui, s: &mut (f32, egui::Rect)| {
+                    s.1 = super::value_field_in(ui, &mut s.0, 0.0..=100.0, "%", 80.0, 0.0, super::FieldOpts::default()).1;
+                },
+                (100.0, egui::Rect::NOTHING),
+            );
+            crate::PhotocraftApp::setup_context(&harness.ctx, kind);
+            harness.run();
+            let before = harness.state().1;
+            harness.get_by_role(egui::accesskit::Role::SpinButton).click();
+            harness.run();
+            let number = harness.get_by_role(egui::accesskit::Role::SpinButton).rect();
+            let field = harness.state().1;
+            let what = format!("{kind:?}: field {field:?}, number {number:?}");
+            assert_eq!(field, before, "{kind:?}: focus must not move the outer allocation");
+            assert!(field.contains_rect(number), "{what}");
+            assert!(harness.get_by_role(egui::accesskit::Role::SpinButton).is_focused(), "{kind:?}: field is focused");
         }
     }
 
