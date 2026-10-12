@@ -88,6 +88,67 @@ pub fn suppress_nested_edit_frame(ui: &mut Ui) {
     ui.style_mut().visuals.selection.stroke = Stroke::new(0.0, text);
 }
 
+/// Inner padding between the outer field box and the [`TextEdit`] in [`outlined_text_edit`].
+const OUTLINED_TEXT_INSET: Vec2 = vec2(4.0, 2.0);
+
+/// Options for [`outlined_text_edit`]: themed fill and [`field_outline`] on the outer box.
+pub struct OutlinedTextEdit<'a> {
+    pub width: f32,
+    pub height: f32,
+    pub font_size: f32,
+    pub char_limit: Option<usize>,
+    pub hint: &'a str,
+}
+
+impl<'a> OutlinedTextEdit<'a> {
+    /// `width` is the outer box width (same convention as [`value_field`]).
+    pub fn new(width: f32) -> Self {
+        Self { width, height: VALUE_FIELD_H, font_size: 12.0, char_limit: None, hint: "" }
+    }
+
+    pub fn height(mut self, height: f32) -> Self {
+        self.height = height;
+        self
+    }
+
+    pub fn font_size(mut self, font_size: f32) -> Self {
+        self.font_size = font_size;
+        self
+    }
+
+    pub fn char_limit(mut self, limit: usize) -> Self {
+        self.char_limit = Some(limit);
+        self
+    }
+
+    pub fn hint_text(mut self, hint: &'a str) -> Self {
+        self.hint = hint;
+        self
+    }
+}
+
+/// Single-line text in a [`surface`] box with [`field_outline`] on focus — same chrome as
+/// [`value_field`] and the Color panel hex readout. The nested [`TextEdit`] has no frame of its
+/// own ([`suppress_nested_edit_frame`]).
+pub fn outlined_text_edit(ui: &mut Ui, id: egui::Id, text: &mut String, opts: OutlinedTextEdit<'_>) -> Response {
+    let t = Tokens::get(ui.ctx());
+    let (rect, _) = ui.allocate_exact_size(vec2(opts.width, opts.height), Sense::hover());
+    surface(ui, rect, t.field, false);
+    let inner = rect.shrink2(OUTLINED_TEXT_INSET);
+    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(inner).layout(egui::Layout::left_to_right(egui::Align::Center)));
+    suppress_nested_edit_frame(&mut child);
+    let mut edit = egui::TextEdit::singleline(text).id(id).desired_width(inner.width()).frame(egui::Frame::NONE).font(theme::mono(opts.font_size));
+    if let Some(n) = opts.char_limit {
+        edit = edit.char_limit(n);
+    }
+    if !opts.hint.is_empty() {
+        edit = edit.hint_text(opts.hint);
+    }
+    let resp = child.add(edit);
+    field_outline(ui, rect, resp.has_focus());
+    resp
+}
+
 /// A dock card: rounded container with a header of pill tabs and optional trailing actions.
 /// Returns the index of the selected tab.
 pub fn card(ui: &mut Ui, id: &str, tabs: &[&str], selected: &mut usize, body: impl FnOnce(&mut Ui, usize)) {
