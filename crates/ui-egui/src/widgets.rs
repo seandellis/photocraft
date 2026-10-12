@@ -96,6 +96,8 @@ pub struct OutlinedTextEdit<'a> {
     pub width: f32,
     pub height: f32,
     pub font_size: f32,
+    /// Monospace (hex, dimensions) vs proportional UI text (search, names). Matches [`text_field`].
+    pub mono: bool,
     pub char_limit: Option<usize>,
     pub hint: &'a str,
 }
@@ -103,7 +105,17 @@ pub struct OutlinedTextEdit<'a> {
 impl<'a> OutlinedTextEdit<'a> {
     /// `width` is the outer box width (same convention as [`value_field`]).
     pub fn new(width: f32) -> Self {
-        Self { width, height: VALUE_FIELD_H, font_size: 12.0, char_limit: None, hint: "" }
+        Self { width, height: VALUE_FIELD_H, font_size: 12.0, mono: true, char_limit: None, hint: "" }
+    }
+
+    /// Proportional body text (search, paths). When switching off mono, bumps default 12.0 → 12.5
+    /// to match [`text_field`]'s proportional size.
+    pub fn mono(mut self, mono: bool) -> Self {
+        self.mono = mono;
+        if !mono && self.font_size == 12.0 {
+            self.font_size = 12.5;
+        }
+        self
     }
 
     pub fn height(mut self, height: f32) -> Self {
@@ -137,7 +149,14 @@ pub fn outlined_text_edit(ui: &mut Ui, id: egui::Id, text: &mut String, opts: Ou
     let inner = rect.shrink2(OUTLINED_TEXT_INSET);
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(inner).layout(egui::Layout::left_to_right(egui::Align::Center)));
     suppress_nested_edit_frame(&mut child);
-    let mut edit = egui::TextEdit::singleline(text).id(id).desired_width(inner.width()).frame(egui::Frame::NONE).font(theme::mono(opts.font_size));
+    // Keep selection highlight inside the field (same idea as [`text_field_ex`] #3789).
+    child.style_mut().visuals.selection.bg_fill = t.field_selection();
+    let font = if opts.mono {
+        theme::mono(opts.font_size)
+    } else {
+        egui::FontId::proportional(opts.font_size)
+    };
+    let mut edit = egui::TextEdit::singleline(text).id(id).desired_width(inner.width()).frame(egui::Frame::NONE).font(font);
     if let Some(n) = opts.char_limit {
         edit = edit.char_limit(n);
     }

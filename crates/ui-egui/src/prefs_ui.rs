@@ -1120,7 +1120,7 @@ fn prefs_body(ui: &mut egui::Ui, f: &mut Map<String, Value>, system: Option<egui
         ui,
         egui::Id::new("prefs-search"),
         &mut search,
-        crate::widgets::OutlinedTextEdit::new(search_w).hint_text(tl!("Search settings…")),
+        crate::widgets::OutlinedTextEdit::new(search_w).mono(false).hint_text(tl!("Search settings…")),
     );
     let found = preference_sections(&values, &search);
     if !found.iter().any(|(id, _)| *id == section)
@@ -1510,7 +1510,12 @@ fn section_fields(
                 Value::String(s) => {
                     ui.label(RichText::new(tl!(&label)).color(t.text_dim));
                     let mut s = s.clone();
-                    crate::widgets::outlined_text_edit(ui, egui::Id::new(("pref-string", path.as_str())), &mut s, crate::widgets::OutlinedTextEdit::new(260.0));
+                    crate::widgets::outlined_text_edit(
+                        ui,
+                        egui::Id::new(("pref-string", path.as_str())),
+                        &mut s,
+                        crate::widgets::OutlinedTextEdit::new(260.0).mono(false),
+                    );
                     obj.insert(k, json!(s));
                 }
                 Value::Number(n) => {
@@ -1549,7 +1554,7 @@ fn section_fields(
                                     ui,
                                     ui.id().with(("scratch-disk", i)),
                                     &mut path,
-                                    crate::widgets::OutlinedTextEdit::new(240.0),
+                                    crate::widgets::OutlinedTextEdit::new(240.0).mono(false),
                                 );
                                 *d = json!({"enabled": on, "path": path});
                             });
@@ -1600,7 +1605,7 @@ fn shortcuts_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String
             ui,
             egui::Id::new("shortcut-filter"),
             &mut filter,
-            crate::widgets::OutlinedTextEdit::new(260.0).hint_text(tl!("command or shortcut")),
+            crate::widgets::OutlinedTextEdit::new(260.0).mono(false).hint_text(tl!("command or shortcut")),
         );
     });
     f.insert("filter".into(), json!(filter));
@@ -1835,7 +1840,12 @@ fn presets_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, 
     });
     let mut new_name = f.get("newName").and_then(Value::as_str).unwrap_or("").to_string();
     ui.horizontal(|ui| {
-        crate::widgets::outlined_text_edit(ui, egui::Id::new("preset-rename"), &mut new_name, crate::widgets::OutlinedTextEdit::new(200.0));
+        crate::widgets::outlined_text_edit(
+            ui,
+            egui::Id::new("preset-rename"),
+            &mut new_name,
+            crate::widgets::OutlinedTextEdit::new(200.0).mono(false),
+        );
         if ui.add_enabled(selected < list.len() && !new_name.trim().is_empty(), egui::Button::new(tl!("Rename"))).clicked() {
             let _ = app.run("edit.presets.presetManager", json!({"action": "rename", "kind": kind, "index": selected, "newName": new_name}));
         }
