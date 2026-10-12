@@ -26,7 +26,7 @@ The toolbar's foreground and background colour chips follow the `Tokens::round_c
 ## Rules
 
 - **Colours and radii come from tokens.** Read them with `Tokens::get(ctx)`; never hard-code a colour in a widget.
-- **Shared widgets live in `widgets.rs`:** `card` (panel group; Pro renders a Photoshop tab strip), `value_field`, `slider`/`slider_row`, `toggle`/`checkbox`, `primary_button`/`secondary_button`, `dropdown` (with a chevron icon), `hairline`/`vline`, `elided_label`.
+- **Shared widgets live in `widgets.rs`:** `card` (panel group; Pro renders a Photoshop tab strip), `value_field`, `slider`/`slider_row`, `toggle`/`checkbox`, `primary_button`/`secondary_button`, `dropdown` (with a chevron icon), `hairline`/`vline`, `elided_label`. Text inputs: see **Text inputs: which widget when** below.
 - **A label never overflows its row.** Wrap by default. Beside a fixed-width control, or anywhere the row cannot reflow, use `widgets::elided_label(ui, text, max_w)`: a longer translation shrinks with `…` and shows the full string on hover instead of running over its neighbours (#3580). A *redundant* caption may be dropped on a narrow dock where its control already carries the meaning (e.g. the Layers lock icons); an *essential* one elides. This mirrors Photoshop: a fixed layout with elision and tooltips, not per-locale reflow.
 - **Icons:** Lucide SVGs in `assets/icons` (ISC licence), embedded via `icon_data.rs`. Regenerate that file when you add icons.
 - **Fonts:** Inter (UI) and JetBrains Mono (numbers), both OFL. Named families `medium` and `semibold` are available via `theme::medium()` and `theme::semibold()`.
@@ -36,6 +36,53 @@ The toolbar's foreground and background colour chips follow the `Tokens::round_c
   - Document tabs read "name @ 12.5% (RGB/8)".
   - Toolbar tool groups carry a corner triangle.
 - **Verify every visual change** with `ui.screenshot`, at several window sizes and in every theme.
+
+## Text inputs: which widget when
+
+Numbers use `value_field*`. Single-line strings are moving onto one drawer in `widgets.rs` with
+`value_field`'s chrome (accent focus ring, shared inset, select-all on focus). **Migration in progress:**
+the *Today* and *Deprecated* columns describe the tree as of branch `feat/unify-inputs` (`e474f18f`);
+write new code against the *Target* column (the plan is `plan/text-field-unify-rollout.md`, local).
+
+| Need | Today | Target | Deprecated, do not use in new code |
+|------|-------|--------|------------------------------------|
+| Number | `value_field`, `value_field_prec`, `value_field_units`, `compact_value_field`, `popup_value_field` | unchanged | none |
+| Search, free string, preset or document name, path | `outlined_text_edit(.., OutlinedTextEdit::new(w).mono(false)..)` (prefs); `text_field(..)` (brush searches); raw `TextEdit::singleline` elsewhere | `string_field(ui, id, text, StringField::new(w).hint_text(..).char_limit(n))` (`char_limit` only where a cap exists) | `text_field`, `text_field_ex` (no callers left), raw `TextEdit::singleline` |
+| String normalised on blur (crop W/H/resolution) | `crop_size::text_field` (local fn) | same `string_field`, with `StringField::new(w).hint_text(..).char_limit(32).normalize_on_blur(fn)` (mono while `normalize_on_blur` is set) | that local fn |
+| Hex colour | `prefs_ui::hex_field`, `panels::hex_edit`, the hex block in `color_picker_ui` (all on `outlined_text_edit`) | `hex_color_field(ui, id, &mut [u8; 3], width)` | those three hand-copies |
+| Inline rename inside a rename state machine (`layer_row_ui`, `channels_panel`, `panels`, `actions`) | raw `TextEdit` via `ui.put(rect, ..)` | unchanged: stays raw, with a lint opt-out and its reason | none |
+| Read-only display | disabled raw `TextEdit` (`type_panels_ui`) | unchanged: stays raw, with a lint opt-out | none |
+
+Renames the migration makes: `outlined_text_edit` → `string_field`, `OutlinedTextEdit` →
+`StringField` (default becomes proportional 12.5; `mono`, `font_size` and `height` become internal),
+`OUTLINED_TEXT_INSET` → `theme::FIELD_INSET`. `text_field` and `text_field_ex` are deleted; there is
+no `name_field` (a name is a `string_field` with a `char_limit`).
+
+Target usage (available after the rename lands; do not copy this before then):
+
+```rust
+// A capped, proportional name field that fills its row; the drawer selects all on focus.
+let name = string_field(ui, id, &mut text, StringField::new(ui.available_width()).hint_text("Name").char_limit(255));
+// Hex colour: the caller owns the colour space; the field edits three bytes.
+if hex_color_field(ui, id.with("hex"), &mut rgb, 64.0).changed() { /* apply rgb */ }
+// Crop W/H/resolution: temp buffer while focused; normalise on blur (invalid → previous).
+let r = string_field(
+    ui,
+    id.with("crop-width"),
+    &mut o.crop_width,
+    StringField::new(64.0)
+        .hint_text(tl!("Width"))
+        .char_limit(32)
+        .normalize_on_blur(crop_size::normalize_length),
+);
+if r.changed() { /* … */ }
+```
+
+Rules that do not change: no keystroke character filters in the drawer (they break paste, IME and
+units); validation stays in the owning module and the engine; conversions between colour spaces go
+through `photocraft-cms`, never inside a field. When the last raw site is gone (PR 4 of the plan)
+and `TextEdit::singleline` is lint-denied, delete the *Today* and *Deprecated* columns and this
+paragraph's "migration in progress" note.
 
 ## Adding icons
 
