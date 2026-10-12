@@ -12,5 +12,6 @@ target/
 *.log
 __pycache__/
 
-.specstory/
-.private/
+.specstory
+.private
+.vscode
