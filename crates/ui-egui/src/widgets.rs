@@ -68,6 +68,26 @@ pub fn field_outline(ui: &Ui, rect: Rect, focused: bool) {
     ui.painter().rect_stroke(rect, t.radius_sm, Stroke::new(width, color), StrokeKind::Inside);
 }
 
+/// Make a nested `DragValue` / `TextEdit` paint no chrome of its own: the outer [`field_outline`]
+/// owns the border. Clears widget fills/strokes and zeroes the width of egui's focused-TextEdit
+/// ring (`visuals.selection.stroke`), which would otherwise sit inside our accent outline as a
+/// second box. Keeps `selection.stroke.color` as primary text so selected digits stay readable
+/// (egui paints selected glyphs with that colour) and leaves `selection.bg_fill` alone.
+pub fn suppress_nested_edit_frame(ui: &mut Ui) {
+    {
+        let w = &mut ui.style_mut().visuals.widgets;
+        for wv in [&mut w.inactive, &mut w.hovered, &mut w.active, &mut w.open] {
+            wv.bg_fill = Color32::TRANSPARENT;
+            wv.weak_bg_fill = Color32::TRANSPARENT;
+            wv.bg_stroke = Stroke::NONE;
+            wv.expansion = 0.0;
+        }
+    }
+    // Width 0: no focus frame. Colour `t.text`: selected text stays primary (not transparent).
+    let text = Tokens::get(ui.ctx()).text;
+    ui.style_mut().visuals.selection.stroke = Stroke::new(0.0, text);
+}
+
 /// A dock card: rounded container with a header of pill tabs and optional trailing actions.
 /// Returns the index of the selected tab.
 pub fn card(ui: &mut Ui, id: &str, tabs: &[&str], selected: &mut usize, body: impl FnOnce(&mut Ui, usize)) {
@@ -493,17 +513,8 @@ fn value_field_box(
     let mut resp = {
         let ui = &mut child;
         {
-            // Clear every widget state's fill/stroke so a focused DragValue's nested TextEdit
-            // does not paint its own (offset) focus frame; the outer `rect` owns the border.
-            {
-                let w = &mut ui.style_mut().visuals.widgets;
-                for wv in [&mut w.inactive, &mut w.hovered, &mut w.active, &mut w.open] {
-                    wv.bg_fill = Color32::TRANSPARENT;
-                    wv.weak_bg_fill = Color32::TRANSPARENT;
-                    wv.bg_stroke = Stroke::NONE;
-                    wv.expansion = 0.0;
-                }
-            }
+            // Outer `rect` owns the border; kill egui's nested TextEdit frame (incl. selection.stroke).
+            suppress_nested_edit_frame(ui);
             ui.style_mut().override_font_id = Some(font);
             // The theme's interact height (24) is taller than the number's slot: the DragValue
             // would grow past the slot's bottom and sit low, or spill out of a slim box (#2823).

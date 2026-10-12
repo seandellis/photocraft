@@ -273,8 +273,20 @@ fn text_field(ui: &mut egui::Ui, id: &str, value: &mut String, hint: &str, width
     let (rect, _) = ui.allocate_exact_size(vec2(width, 24.0), egui::Sense::hover());
     crate::widgets::surface(ui, rect, t.field, false);
     let inner = rect.shrink2(vec2(4.0, 2.0));
-    let r = ui.put(inner, egui::TextEdit::singleline(&mut buf).id(id).char_limit(32).hint_text(hint).frame(egui::Frame::NONE).font(crate::theme::mono(12.0)));
-    // Accent ring on the outer box once focus is known (not the nested TextEdit rect).
+    // Outer box owns the border (`Frame::NONE` + no selection.stroke ring).
+    let r = {
+        let mut child = ui.new_child(egui::UiBuilder::new().max_rect(inner).layout(egui::Layout::left_to_right(egui::Align::Center)));
+        crate::widgets::suppress_nested_edit_frame(&mut child);
+        child.add(
+            egui::TextEdit::singleline(&mut buf)
+                .id(id)
+                .char_limit(32)
+                .hint_text(hint)
+                .desired_width(inner.width())
+                .frame(egui::Frame::NONE)
+                .font(crate::theme::mono(12.0)),
+        )
+    };
     crate::widgets::field_outline(ui, rect, r.has_focus());
     if r.has_focus() {
         ui.data_mut(|d| d.insert_temp(id, buf));

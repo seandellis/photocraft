@@ -3388,11 +3388,11 @@ fn hex_edit(ui: &mut egui::Ui, id: egui::Id, color: &mut [f32; 4]) -> bool {
     let mut text = typing.unwrap_or_else(|| format!("{r:02X}{g:02X}{b:02X}"));
     let field = rect.shrink2(vec2(5.0, 2.0));
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(field).layout(egui::Layout::left_to_right(egui::Align::Center)));
+    // Outer box owns the border (`Frame::NONE` + no selection.stroke ring).
+    widgets::suppress_nested_edit_frame(&mut child);
     // Room for a pasted "#rrggbb"; the parse trims it, and the field shows plain digits otherwise.
-    // `Frame::NONE`: the themed surface above is this field's frame.
     let resp =
         child.add(egui::TextEdit::singleline(&mut text).id(id).char_limit(7).desired_width(field.width()).frame(egui::Frame::NONE).font(theme::mono(12.0)));
-    // Accent ring on the outer box once focus is known (not the nested TextEdit rect).
     widgets::field_outline(ui, rect, resp.has_focus());
     if resp.has_focus() {
         ui.data_mut(|d| d.insert_temp(id, text.clone()));
