@@ -11,6 +11,48 @@ pub fn home_screen_version(lang: Lang) -> HomeScreenVersion {
     build_info::format_home_screen_version(build_info::VERSION, build_info::short_sha(), build_info::git_branch(), when.as_deref())
 }
 
+/// Alternate home-screen line after a blank gap: `v0.8.2 (e6b18d0a8, 2026-10-13, 10:48:36 PM) [branch]`.
+pub fn home_screen_detail_line(lang: Lang) -> Option<String> {
+    let sha = build_info::short_sha()?;
+    let date_iso: String = build_info::build_date()
+        .map(str::to_string)
+        .or_else(|| build_info::build_unix().and_then(iso_date_from_unix))?;
+    let unix = build_info::build_unix()?;
+    let utc = OffsetDateTime::from_unix_timestamp(unix).ok()?;
+    let local = utc.to_offset(local_offset().unwrap_or(UtcOffset::UTC));
+    let time = format_time(local, lang);
+    Some(format_home_screen_detail_line(build_info::VERSION, sha, &date_iso, &time, build_info::git_branch()))
+}
+
+/// Clipboard text for the full home-screen version block (primary lines, blank line, optional detail).
+pub fn home_screen_clipboard_text(version: &HomeScreenVersion, detail: Option<&str>) -> String {
+    let base = version.clipboard_text();
+    match detail.filter(|s| !s.is_empty()) {
+        Some(d) => format!("{base}\n\n{d}"),
+        None => base,
+    }
+}
+
+/// `v0.8.2 (sha, YYYY-MM-DD, time) [branch]` — ISO date, UI-local time, branch when named.
+pub fn format_home_screen_detail_line(version: &str, short_sha: &str, date_iso: &str, time_local: &str, branch: Option<&str>) -> String {
+    let v_label = if version.starts_with('v') || version.starts_with('V') {
+        version.to_string()
+    } else {
+        format!("v{version}")
+    };
+    let mut line = format!("{v_label} ({short_sha}, {date_iso}, {time_local})");
+    if let Some(name) = branch.filter(|b| !b.is_empty() && *b != "HEAD") {
+        line.push_str(&format!(" [{name}]"));
+    }
+    line
+}
+
+fn iso_date_from_unix(unix: i64) -> Option<String> {
+    let utc = OffsetDateTime::from_unix_timestamp(unix).ok()?;
+    let fmt = time::format_description::parse_borrowed::<1>("[year]-[month padding:zero]-[day padding:zero]").ok()?;
+    utc.format(&fmt).ok()
+}
+
 fn when_built_display(lang: Lang) -> Option<String> {
     if let Some(unix) = build_info::build_unix() {
         return format_build_when(unix, lang);
@@ -81,6 +123,14 @@ fn format_time(dt: OffsetDateTime, lang: Lang) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detail_line_matches_home_screen_alternate_format() {
+        let s = format_home_screen_detail_line("0.8.2", "e6b18d0a8", "2026-10-13", "10:48:36 PM", Some("feat/version-build-info"));
+        assert_eq!(s, "v0.8.2 (e6b18d0a8, 2026-10-13, 10:48:36 PM) [feat/version-build-info]");
+        let no_branch = format_home_screen_detail_line("0.8.2", "abc", "2026-10-13", "22:00:00", Some("HEAD"));
+        assert_eq!(no_branch, "v0.8.2 (abc, 2026-10-13, 22:00:00)");
+    }
 
     #[test]
     fn format_build_when_puts_time_last() {

@@ -2462,8 +2462,9 @@ fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let recent_h = if recent.is_empty() { 0.0 } else { 34.0 + recent.len() as f32 * HOME_RECENT_ROW };
     let lang = crate::i18n::Lang::from_pref(&app.session.prefs().interface.language);
     let version = crate::build_version::home_screen_version(lang);
-    // Fixed slack for the faint build-info block under the links (layout-sized, not precomputed per line).
-    const HOME_VERSION_BLOCK_H: f32 = 32.0;
+    let version_detail = crate::build_version::home_screen_detail_line(lang);
+    // Slack for primary/secondary lines, blank gap, and optional detail line.
+    const HOME_VERSION_BLOCK_H: f32 = 86.0;
     let card = Rect::from_center_size(area.center(), egui::vec2(460.0, 330.0 + recent_h + HOME_VERSION_BLOCK_H));
     let new_label = crate::shortcuts::command_label(app, "New document…", "file.new");
     let open_label = crate::shortcuts::command_label(app, "Open…", "file.open");
@@ -2508,7 +2509,7 @@ fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
             }
             ui.add_space(26.0);
             // Full card width so links and build info share one center line (not a shrink-wrapped column).
-            start_screen_footer(app, ui, card.width(), &version, &t);
+            start_screen_footer(app, ui, card.width(), &version, version_detail.as_deref(), &t);
         });
     });
 }
@@ -2519,6 +2520,7 @@ fn start_screen_footer(
     ui: &mut egui::Ui,
     card_width: f32,
     version: &photocraft_engine::build_info::HomeScreenVersion,
+    version_detail: Option<&str>,
     t: &crate::theme::Tokens,
 ) {
     const DISCORD_BTN: f32 = 190.0;
@@ -2527,7 +2529,7 @@ fn start_screen_footer(
     });
     ui.add_space(10.0);
     crate::links::link_row_with_width(app, ui, card_width);
-    start_screen_version_block(app, ui, version, t);
+    start_screen_version_block(app, ui, version, version_detail, t);
 }
 
 /// Horizontally centre a fixed-width control in the home card (spacer + `set_width`, like the action buttons).
@@ -2545,16 +2547,17 @@ fn start_screen_version_block(
     app: &mut PhotocraftApp,
     ui: &mut egui::Ui,
     version: &photocraft_engine::build_info::HomeScreenVersion,
+    version_detail: Option<&str>,
     t: &crate::theme::Tokens,
 ) {
     ui.add_space(8.0);
-    let job = start_screen_version_label_job(ui, version, t);
+    let job = start_screen_version_label_job(ui, version, version_detail, t);
     let resp = ui
         .add(egui::Label::new(job).sense(Sense::click()))
         .on_hover_cursor(egui::CursorIcon::PointingHand)
         .on_hover_text("Click to copy build info");
     if resp.clicked() {
-        ui.ctx().copy_text(version.clipboard_text());
+        ui.ctx().copy_text(crate::build_version::home_screen_clipboard_text(version, version_detail));
         app.ui.status = "Copied build info".into();
     }
 }
@@ -2563,6 +2566,7 @@ fn start_screen_version_block(
 fn start_screen_version_label_job(
     ui: &egui::Ui,
     version: &photocraft_engine::build_info::HomeScreenVersion,
+    version_detail: Option<&str>,
     t: &crate::theme::Tokens,
 ) -> egui::text::LayoutJob {
     const FONT_SIZE: f32 = 11.5;
@@ -2571,11 +2575,14 @@ fn start_screen_version_label_job(
     let font = egui::FontId::proportional(FONT_SIZE);
     let painter = ui.painter();
     let line_w = |text: &str| painter.layout_no_wrap(text.into(), font.clone(), t.text_faint).size().x;
-    let block_w = version
+    let mut block_w = version
         .secondary
         .as_deref()
         .map(|s| line_w(s).max(line_w(&version.primary)))
         .unwrap_or_else(|| line_w(&version.primary));
+    if let Some(detail) = version_detail {
+        block_w = block_w.max(line_w(detail));
+    }
     let mut job = egui::text::LayoutJob {
         halign: egui::Align::Center,
         wrap: egui::text::TextWrapping { max_width: block_w, ..Default::default() },
@@ -2593,6 +2600,10 @@ fn start_screen_version_label_job(
     if let Some(second) = &version.secondary {
         job.append("\n", 0.0, fmt());
         job.append(second, 0.0, fmt());
+    }
+    if let Some(detail) = version_detail {
+        job.append("\n\n", 0.0, fmt());
+        job.append(detail, 0.0, fmt());
     }
     job
 }
