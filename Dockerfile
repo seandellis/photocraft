@@ -41,10 +41,18 @@ ARG CARGO_PROFILE_WASM_RELEASE_LTO=thin
 ARG CARGO_BUILD_JOBS=1
 # Optional build provenance shown in About and `--version` (crates/engine/src/build_info.rs).
 # .git is not in the build context, so pass it in, e.g.
-#   --build-arg PHOTOCRAFT_BUILD_SHA=$(git rev-parse HEAD) --build-arg PHOTOCRAFT_BUILD_DATE=$(date -u +%F)
+#   --build-arg PHOTOCRAFT_BUILD_SHA=$(git rev-parse HEAD) \
+#   --build-arg PHOTOCRAFT_BUILD_UNIX=$(date +%s) \
+#   --build-arg PHOTOCRAFT_BUILD_DATE=$(date -u +%F)
 # Left empty, the build reports itself as a dev build.
 ARG PHOTOCRAFT_BUILD_SHA=
 ARG PHOTOCRAFT_BUILD_DATE=
+ARG PHOTOCRAFT_BUILD_UNIX=
+ARG PHOTOCRAFT_BUILD_BRANCH=
+ENV PHOTOCRAFT_BUILD_SHA=${PHOTOCRAFT_BUILD_SHA} \
+    PHOTOCRAFT_BUILD_DATE=${PHOTOCRAFT_BUILD_DATE} \
+    PHOTOCRAFT_BUILD_UNIX=${PHOTOCRAFT_BUILD_UNIX} \
+    PHOTOCRAFT_BUILD_BRANCH=${PHOTOCRAFT_BUILD_BRANCH}
 # index.html selects the wasm-release profile, HEIF support and wasm-opt -Oz.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \

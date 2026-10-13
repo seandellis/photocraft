@@ -2542,7 +2542,7 @@ fn start_screen_centered_row<R>(ui: &mut egui::Ui, row_width: f32, content_width
     .inner
 }
 
-/// Build provenance under the home-screen links; centred like the subtitle via [`egui::Label`].
+/// Build provenance under the home-screen links; centred multiline [`egui::Label`], click to copy.
 fn start_screen_version_block(
     app: &mut PhotocraftApp,
     ui: &mut egui::Ui,
@@ -2551,24 +2551,6 @@ fn start_screen_version_block(
     t: &crate::theme::Tokens,
 ) {
     ui.add_space(8.0);
-    let job = start_screen_version_label_job(ui, version, version_detail, t);
-    let resp = ui
-        .add(egui::Label::new(job).sense(Sense::click()))
-        .on_hover_cursor(egui::CursorIcon::PointingHand)
-        .on_hover_text("Click to copy build info");
-    if resp.clicked() {
-        ui.ctx().copy_text(crate::build_version::home_screen_clipboard_text(version, version_detail));
-        app.ui.status = "Copied build info".into();
-    }
-}
-
-/// Multiline layout for the home-screen build label (tight leading; lines centred within the block).
-fn start_screen_version_label_job(
-    ui: &egui::Ui,
-    version: &photocraft_engine::build_info::HomeScreenVersion,
-    version_detail: Option<&str>,
-    t: &crate::theme::Tokens,
-) -> egui::text::LayoutJob {
     const FONT_SIZE: f32 = 11.5;
     // Slightly below font size so a two-line block reads as one tight unit.
     const TIGHT_LINE_H: f32 = 17.5;
@@ -2605,7 +2587,14 @@ fn start_screen_version_label_job(
         job.append("\n\n", 0.0, fmt());
         job.append(detail, 0.0, fmt());
     }
-    job
+    let resp = ui
+        .add(egui::Label::new(job).sense(Sense::click()))
+        .on_hover_cursor(egui::CursorIcon::PointingHand)
+        .on_hover_text("Click to copy build info");
+    if resp.clicked() {
+        ui.ctx().copy_text(crate::build_version::home_screen_clipboard_text(version, version_detail));
+        app.ui.status = "Copied build info".into();
+    }
 }
 
 /// Wayland has no native file drops (winit 0.30, #386), so the hint offers File › Open and paste.

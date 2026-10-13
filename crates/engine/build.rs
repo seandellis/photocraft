@@ -24,12 +24,11 @@ fn main() {
     register_git_rerun(&root, &git_dir);
 
     set_if_unset("PHOTOCRAFT_BUILD_SHA", git(&root, &["rev-parse", "HEAD"]));
-    set_if_unset("PHOTOCRAFT_BUILD_DATE", utc_date_from_now());
+    set_build_time_if_needed();
     let branch = git(&root, &["rev-parse", "--abbrev-ref", "HEAD"]);
     if branch.as_deref() != Some("HEAD") {
         set_if_unset("PHOTOCRAFT_BUILD_BRANCH", branch);
     }
-    set_if_unset("PHOTOCRAFT_BUILD_UNIX", build_unix_secs());
 }
 
 /// Workspace root: `crates/engine` → two levels up.
@@ -74,11 +73,24 @@ fn git(root: &Path, args: &[&str]) -> Option<String> {
     }
 }
 
-/// UTC `YYYY-MM-DD` without shelling out (works on Windows dev builds too).
-fn utc_date_from_now() -> Option<String> {
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH).ok()?.as_secs();
-    let (y, m, d) = utc_ymd_from_unix_secs(secs);
-    Some(format!("{y:04}-{m:02}-{d:02}"))
+/// When date and/or unix are unset, stamp both from one `SystemTime::now()` so they stay aligned.
+fn set_build_time_if_needed() {
+    let need_date = std::env::var_os("PHOTOCRAFT_BUILD_DATE").is_none();
+    let need_unix = std::env::var_os("PHOTOCRAFT_BUILD_UNIX").is_none();
+    if !need_date && !need_unix {
+        return;
+    }
+    let secs = match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(d) => d.as_secs(),
+        Err(_) => return,
+    };
+    if need_date {
+        let (y, m, d) = utc_ymd_from_unix_secs(secs);
+        set_if_unset("PHOTOCRAFT_BUILD_DATE", Some(format!("{y:04}-{m:02}-{d:02}")));
+    }
+    if need_unix {
+        set_if_unset("PHOTOCRAFT_BUILD_UNIX", Some(secs.to_string()));
+    }
 }
 
 /// Civil calendar date in UTC from Unix seconds (no external deps).
@@ -99,8 +111,4 @@ fn civil_from_days(z: i64) -> (i32, u32, u32) {
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if mp < 10 { y } else { y + 1 };
     (y, m, d)
-}
-
-fn build_unix_secs() -> Option<String> {
-    SystemTime::now().duration_since(UNIX_EPOCH).ok().map(|d| d.as_secs().to_string())
 }
