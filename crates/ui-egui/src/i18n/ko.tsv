@@ -431,7 +431,9 @@
 	Layer Edges	레이어 가장자리
 	Developer	개발자
 	Canvas Outlines	캔버스 윤곽선
-	Widget Outlines	위젯 윤곽선
+	Widget Hits	위젯 히트
+	Widget Wireframes	위젯 윤곽선
+	Widget Focus	위젯 포커스
 	Isolate Layers	레이어 격리
 	Layer Content Options…	레이어 내용 옵션…
 	Fill Content	칠 내용

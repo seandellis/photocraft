@@ -77,8 +77,19 @@ impl Default for SnapTo {
 pub struct Developer {
     /// Document/tool interaction geometry wireframes on the canvas.
     pub canvas_outlines: bool,
-    /// egui interactive widget rects (debug builds only; see `debug_outlines`).
-    pub widget_outlines: bool,
+    /// egui widgets under the pointer (`show_widget_hits`; debug builds only).
+    pub widget_hits: bool,
+    /// egui rects on every interactive widget (`show_interactive_widgets`).
+    pub widget_wireframes: bool,
+    /// egui keyboard-focus highlight (`show_focused_widget`).
+    pub widget_focus: bool,
+}
+
+impl Developer {
+    /// Any egui widget-debug overlay flag is on (each still gated by View › Extras).
+    pub fn any_widget_debug(&self) -> bool {
+        self.widget_hits || self.widget_wireframes || self.widget_focus
+    }
 }
 
 /// View-, window- and type-preference state of the shell.
@@ -274,7 +285,9 @@ fn snap_slot<'a>(s: &'a mut SnapTo, key: &str) -> Option<&'a mut bool> {
 fn developer_slot<'a>(s: &'a mut Developer, key: &str) -> Option<&'a mut bool> {
     Some(match key {
         "canvasOutlines" => &mut s.canvas_outlines,
-        "widgetOutlines" => &mut s.widget_outlines,
+        "widgetHits" => &mut s.widget_hits,
+        "widgetWireframes" => &mut s.widget_wireframes,
+        "widgetFocus" => &mut s.widget_focus,
         _ => return None,
     })
 }
@@ -518,7 +531,12 @@ pub fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
     if let Some(k) = id.strip_prefix("view.developer.") {
         // Stored flags (not extras-gated), same as Show items. `all` is checked when both are on.
         if k == "all" {
-            return Some(o.developer.canvas_outlines && o.developer.widget_outlines);
+            return Some(
+                o.developer.canvas_outlines
+                    && o.developer.widget_hits
+                    && o.developer.widget_wireframes
+                    && o.developer.widget_focus,
+            );
         }
         let mut s = o.developer;
         return developer_slot(&mut s, k).map(|b| *b);
@@ -717,7 +735,9 @@ fn run(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, p: &Value) -> Res
     if let Some(k) = id.strip_prefix("view.developer.") {
         if k == "all" {
             o.developer.canvas_outlines = true;
-            o.developer.widget_outlines = true;
+            o.developer.widget_hits = true;
+            o.developer.widget_wireframes = true;
+            o.developer.widget_focus = true;
             o.extras = true;
             return Ok(json!(true));
         }

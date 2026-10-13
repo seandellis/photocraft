@@ -430,7 +430,9 @@
 	Layer Edges	Tepi Layer
 	Developer	Pengembang
 	Canvas Outlines	Garis besar kanvas
-	Widget Outlines	Garis besar widget
+	Widget Hits	Klik widget
+	Widget Wireframes	Garis besar widget
+	Widget Focus	Fokus widget
 	Isolate Layers	Isolasi Layer
 	Layer Content Options…	Opsi Isi Layer…
 	Fill Content	Isi Konten

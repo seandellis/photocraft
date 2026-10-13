@@ -438,7 +438,9 @@
 	Layer Edges	Laagranden
 	Developer	Ontwikkelaar
 	Canvas Outlines	Canvascontouren
-	Widget Outlines	Widgetcontouren
+	Widget Hits	Widget hits
+	Widget Wireframes	Widgetcontouren
+	Widget Focus	Widgetfocus
 	Isolate Layers	Lagen isoleren
 	Layer Content Options…	Opties voor laaginhoud…
 	Fill Content	Vulinhoud

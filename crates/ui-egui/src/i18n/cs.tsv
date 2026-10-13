@@ -453,7 +453,9 @@
 	Layer Edges	Okraje vrstev
 	Developer	Vývojář
 	Canvas Outlines	Obrysy plátna
-	Widget Outlines	Obrysy widgetů
+	Widget Hits	Zásahy widgetů
+	Widget Wireframes	Obrysy widgetů
+	Widget Focus	Zaměření widgetu
 	Isolate Layers	Izolovat vrstvy
 	Layer Content Options…	Možnosti obsahu vrstvy…
 	Fill Content	Obsah výplně

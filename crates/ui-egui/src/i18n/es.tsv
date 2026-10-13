@@ -447,7 +447,9 @@
 	Layer Edges	Bordes de capa
 	Developer	Desarrollador
 	Canvas Outlines	Contornos del lienzo
-	Widget Outlines	Contornos de widgets
+	Widget Hits	Aciertos de widgets
+	Widget Wireframes	Contornos de widgets
+	Widget Focus	Foco del widget
 	Isolate Layers	Aislar capas
 	Layer Content Options…	Opciones de contenido de capa…
 	Fill Content	Contenido de relleno

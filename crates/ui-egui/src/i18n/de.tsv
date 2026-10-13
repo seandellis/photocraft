@@ -450,7 +450,9 @@
 	Layer Edges	Ebenenkanten
 	Developer	Entwickler
 	Canvas Outlines	Arbeitsflächenumrisse
-	Widget Outlines	Widget-Umrisse
+	Widget Hits	Widget-Treffer
+	Widget Wireframes	Widget-Umrisse
+	Widget Focus	Widget-Fokus
 	Isolate Layers	Ebenen isolieren
 	Layer Content Options…	Ebeneninhalt-Optionen…
 	Fill Content	Füllinhalt

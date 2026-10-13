@@ -434,7 +434,9 @@
 	Layer Edges	Katman Kenarları
 	Developer	Geliştirici
 	Canvas Outlines	Tuval dış hatları
-	Widget Outlines	Widget dış hatları
+	Widget Hits	Widget isabetleri
+	Widget Wireframes	Widget dış hatları
+	Widget Focus	Widget odağı
 	Isolate Layers	Katmanları Yalıt
 	Layer Content Options…	Katman İçerik Seçenekleri…
 	Fill Content	İçeriği Doldur

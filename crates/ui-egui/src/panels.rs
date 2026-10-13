@@ -1725,6 +1725,11 @@ fn dock_panels(app: &mut PhotocraftApp, ui: &mut egui::Ui, p: &crate::state::Pan
 
 /// One dock group's tab content; `dock` bounds it and scrolls it when it's taller.
 pub(crate) fn dock_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, group: crate::dock::Group, tab: usize) {
+    // Named ids in egui's widget-debug stack (View › Developer › Widget …).
+    ui.push_id((group.key(), tab), |ui| dock_body_inner(app, ui, group, tab));
+}
+
+fn dock_body_inner(app: &mut PhotocraftApp, ui: &mut egui::Ui, group: crate::dock::Group, tab: usize) {
     use crate::dock::Group;
     let pro = Tokens::get(ui.ctx()).pro;
     match (group, tab) {

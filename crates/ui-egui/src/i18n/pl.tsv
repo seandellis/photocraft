@@ -445,7 +445,9 @@
 	Layer Edges	Krawędzie warstwy
 	Developer	Programista
 	Canvas Outlines	Kontury płótna
-	Widget Outlines	Kontury widżetów
+	Widget Hits	Trafienia widżetów
+	Widget Wireframes	Kontury widżetów
+	Widget Focus	Fokus widżetu
 	Isolate Layers	Izoluj warstwy
 	Layer Content Options…	Opcje zawartości warstwy…
 	Fill Content	Zawartość wypełnienia

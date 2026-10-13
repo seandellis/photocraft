@@ -62,11 +62,17 @@ fn show_snap_extras_and_screen_modes_are_state() {
 #[test]
 fn developer_outlines_toggle_and_extras_gate() {
     let (mut app, ctx) = app_with(1);
-    for id in ["view.developer.canvasOutlines", "view.developer.widgetOutlines", "view.developer.all"] {
+    for id in [
+        "view.developer.canvasOutlines",
+        "view.developer.widgetHits",
+        "view.developer.widgetWireframes",
+        "view.developer.widgetFocus",
+        "view.developer.all",
+    ] {
         assert!(is_live(id), "{id}");
     }
     assert_eq!(checked(&app, "view.developer.canvasOutlines"), Some(false));
-    assert_eq!(checked(&app, "view.developer.widgetOutlines"), Some(false));
+    assert_eq!(checked(&app, "view.developer.widgetHits"), Some(false));
     assert_eq!(checked(&app, "view.developer.all"), Some(false));
 
     menu(&mut app, &ctx, "view.developer.canvasOutlines", json!({})).unwrap();
@@ -84,8 +90,8 @@ fn developer_outlines_toggle_and_extras_gate() {
     assert_eq!(checked(&app, "view.developer.canvasOutlines"), Some(true));
 
     // Turning a Developer item on brings Extras back.
-    menu(&mut app, &ctx, "view.developer.widgetOutlines", json!({})).unwrap();
-    assert!(app.ui.view.extras && app.ui.view.developer.widget_outlines);
+    menu(&mut app, &ctx, "view.developer.widgetHits", json!({})).unwrap();
+    assert!(app.ui.view.extras && app.ui.view.developer.widget_hits);
 
     // Session-only: not written with the rest of ViewOptions (ui.ron).
     let v = serde_json::to_value(&app.ui.view).unwrap();
@@ -93,15 +99,16 @@ fn developer_outlines_toggle_and_extras_gate() {
 }
 
 #[test]
-fn developer_all_checked_when_both_flags_on() {
+fn developer_all_checked_when_every_outline_flag_on() {
     let (mut app, ctx) = app_with(0);
     assert_eq!(checked(&app, "view.developer.all"), Some(false));
     menu(&mut app, &ctx, "view.developer.all", json!({})).unwrap();
-    assert!(app.ui.view.developer.canvas_outlines && app.ui.view.developer.widget_outlines);
+    assert!(app.ui.view.developer.canvas_outlines);
+    assert!(app.ui.view.developer.widget_hits && app.ui.view.developer.widget_wireframes && app.ui.view.developer.widget_focus);
     assert!(app.ui.view.extras);
     assert_eq!(checked(&app, "view.developer.all"), Some(true));
     assert_eq!(checked(&app, "view.developer.canvasOutlines"), Some(true));
-    assert_eq!(checked(&app, "view.developer.widgetOutlines"), Some(true));
+    assert_eq!(checked(&app, "view.developer.widgetHits"), Some(true));
 }
 
 #[test]

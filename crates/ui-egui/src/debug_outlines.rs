@@ -1,12 +1,12 @@
 //! View › Developer outline overlays.
 //!
-//! - **Widget Outlines** flip egui's [`egui::style::DebugOptions`] (debug builds only). They cover
-//!   every interactive widget, including tabs and the start screen in the central panel — not only
-//!   dock chrome. **Canvas Outlines** is the dedicated document/tool pass; enable one or both.
+//! - **Widget Hits / Wireframes / Focus** flip egui [`egui::style::DebugOptions`] (debug builds
+//!   only). Hits-only is the lightest mode; wireframes paint every interactive widget and egui's
+//!   "Widgets in order" stack text under the pointer.
 //! - **Canvas Outlines** paints document/tool hit geometry in screen space at the end of
 //!   [`crate::canvas::document_area`].
 //!
-//! Both are visible only while View › Extras is on and the matching Developer flag is on
+//! All are visible only while View › Extras is on and the matching Developer flag is on
 //! ([`crate::view_cmds::ViewOptions::shows`]).
 
 use egui::{Color32, Rect, Stroke};
@@ -16,25 +16,25 @@ use crate::canvas::ViewXform;
 use crate::theme::Tokens;
 use crate::view_cmds::ViewOptions;
 
-/// Sync egui's debug overlays with View › Developer › Widget Outlines (and Extras).
+/// Sync egui's debug overlays with View › Developer widget modes (and Extras).
 ///
 /// Only available in debug builds: egui compiles [`egui::style::DebugOptions`] out of release.
 pub fn sync_widget_outline_debug(ctx: &egui::Context, view: &ViewOptions) {
     #[cfg(debug_assertions)]
     {
-        let on = view.shows(view.developer.widget_outlines);
+        let extras = view.extras;
+        let dev = &view.developer;
         // Both dark and light styles: Appearance Mode can switch without reopening the menu.
         ctx.all_styles_mut(|s| {
             let d = &mut s.debug;
-            if on {
-                d.show_interactive_widgets = true;
-                d.show_widget_hits = true;
-                d.show_focused_widget = true;
-            } else {
+            d.show_widget_hits = extras && dev.widget_hits;
+            d.show_interactive_widgets = extras && dev.widget_wireframes;
+            d.show_focused_widget = extras && dev.widget_focus;
+            if !dev.any_widget_debug() {
                 // Reset so toggling off (or Extras off) does not leak debug styling.
                 let def = egui::style::DebugOptions::default();
-                d.show_interactive_widgets = def.show_interactive_widgets;
                 d.show_widget_hits = def.show_widget_hits;
+                d.show_interactive_widgets = def.show_interactive_widgets;
                 d.show_focused_widget = def.show_focused_widget;
             }
         });
@@ -138,19 +138,24 @@ mod tests {
 
     #[test]
     #[cfg(debug_assertions)]
-    fn widget_outlines_flip_egui_debug_options() {
+    fn widget_debug_modes_flip_egui_debug_options() {
         let (mut app, ctx) = app();
-        assert!(!ctx.global_style().debug.show_interactive_widgets);
-        app.ui.view.developer.widget_outlines = true;
+        assert!(!ctx.global_style().debug.show_widget_hits);
+        app.ui.view.developer.widget_hits = true;
         app.ui.view.extras = true;
         sync_widget_outline_debug(&ctx, &app.ui.view);
-        assert!(ctx.global_style().debug.show_interactive_widgets);
         assert!(ctx.global_style().debug.show_widget_hits);
+        assert!(!ctx.global_style().debug.show_interactive_widgets);
+        app.ui.view.developer.widget_wireframes = true;
+        sync_widget_outline_debug(&ctx, &app.ui.view);
+        assert!(ctx.global_style().debug.show_interactive_widgets);
+        app.ui.view.developer.widget_focus = true;
+        sync_widget_outline_debug(&ctx, &app.ui.view);
         assert!(ctx.global_style().debug.show_focused_widget);
-        // Extras off hides outlines without clearing the Developer flag.
+        // Extras off hides overlays without clearing the Developer flags.
         app.ui.view.extras = false;
         sync_widget_outline_debug(&ctx, &app.ui.view);
-        assert!(!ctx.global_style().debug.show_interactive_widgets);
-        assert!(app.ui.view.developer.widget_outlines);
+        assert!(!ctx.global_style().debug.show_widget_hits);
+        assert!(app.ui.view.developer.widget_hits);
     }
 }

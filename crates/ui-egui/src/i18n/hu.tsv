@@ -612,7 +612,9 @@
 	Layer Edges	Rétegszélek
 	Developer	Fejlesztő
 	Canvas Outlines	Vászonkörvonalak
-	Widget Outlines	Widgetkörvonalak
+	Widget Hits	Widget találatok
+	Widget Wireframes	Widgetkörvonalak
+	Widget Focus	Widget fókusz
 	Layer from Background	Réteg a háttérből
 	Layer From Background…	Réteg a háttérből…
 	Layers	Rétegek

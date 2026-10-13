@@ -590,7 +590,9 @@
 	Layer Edges	Cạnh lớp
 	Developer	Nhà phát triển
 	Canvas Outlines	Viền khung vẽ
-	Widget Outlines	Viền widget
+	Widget Hits	Widget dưới con trỏ
+	Widget Wireframes	Viền widget
+	Widget Focus	Tiêu điểm widget
 	Layers	Các lớp
 	Legacy Macintosh RGB	RGB Macintosh cũ
 	Lock Guides	Khóa đường căn

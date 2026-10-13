@@ -1897,7 +1897,9 @@
 	Layer Edges	Краї шару
 	Developer	Розробник
 	Canvas Outlines	Контури полотна
-	Widget Outlines	Контури віджетів
+	Widget Hits	Влучання по віджетах
+	Widget Wireframes	Контури віджетів
+	Widget Focus	Фокус віджета
 	Left Edges	Ліві краї
 	Lens Blur…	Розмиття об'єктива…
 	Lighting Effects…	Ефекти освітлення…

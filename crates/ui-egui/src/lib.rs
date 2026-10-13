@@ -1636,7 +1636,7 @@ impl eframe::App for PhotocraftApp {
         if self.live_tokens.poll(ctx, self.ui.theme) {
             self.checker = None;
         }
-        // View › Developer › Widget Outlines (Extras-gated); no-op in release builds.
+        // View › Developer widget debug modes (Extras-gated); no-op in release builds.
         debug_outlines::sync_widget_outline_debug(ctx, &self.ui.view);
         self.drain_control(ctx);
         native_menu::run(self, ctx);
@@ -1763,24 +1763,24 @@ impl eframe::App for PhotocraftApp {
         panels::sync_window_title(self, &ctx);
         let chrome = !self.ui.view.hides_chrome();
         if chrome && self.ui.panels.menu_bar {
-            panels::title_bar(self, ui);
+            ui.push_id(egui::IdSalt::new("chrome_title_bar"), |ui| panels::title_bar(self, ui));
         }
         if chrome && self.ui.panels.options_bar {
-            panels::options_bar(self, ui);
+            ui.push_id(egui::IdSalt::new("chrome_options_bar"), |ui| panels::options_bar(self, ui));
         }
         if chrome && self.ui.panels.status_bar {
-            panels::status_bar(self, ui);
+            ui.push_id(egui::IdSalt::new("chrome_status_bar"), |ui| panels::status_bar(self, ui));
         }
         if chrome && self.ui.panels.toolbar {
-            panels::toolbar(self, ui);
+            ui.push_id(egui::IdSalt::new("chrome_toolbar"), |ui| panels::toolbar(self, ui));
         }
         if chrome && self.ui.panels.dock {
-            panels::right_dock(self, ui);
+            ui.push_id(egui::IdSalt::new("chrome_dock"), |ui| panels::right_dock(self, ui));
         }
         let t = theme::Tokens::get(&ctx);
         let backdrop = if chrome { prefs_ui::pasteboard_color(self).unwrap_or(t.canvas) } else { egui::Color32::BLACK };
         egui::CentralPanel::default().frame(egui::Frame::NONE.fill(backdrop)).show(ui, |ui| {
-            canvas::document_area(self, ui);
+            ui.push_id(egui::IdSalt::new("central"), |ui| canvas::document_area(self, ui));
         });
         panels::properties_window(self, &ctx);
         brush_panel::window(self, &ctx);

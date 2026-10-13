@@ -1806,6 +1806,10 @@ pub(crate) fn arranged_cells(app: &PhotocraftApp, rect: Rect) -> Option<Vec<(usi
 }
 
 fn documents(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
+    ui.push_id(egui::IdSalt::new("documents"), |ui| documents_body(app, ui));
+}
+
+fn documents_body(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     app.drop_canvas_rect = None;
     app.tab_strip = None;
     retain_gpu_documents(app);
@@ -2465,7 +2469,7 @@ fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let card = Rect::from_center_size(area.center(), egui::vec2(460.0, 330.0 + recent_h));
     let new_label = crate::shortcuts::command_label(app, "New document…", "file.new");
     let open_label = crate::shortcuts::command_label(app, "Open…", "file.open");
-    ui.scope_builder(egui::UiBuilder::new().max_rect(card), |ui| {
+    ui.scope_builder(egui::UiBuilder::new().id_salt("start_screen").max_rect(card), |ui| {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 let title = ui.painter().layout_no_wrap(tl!("PhotoCraft").into(), crate::theme::semibold(38.0), t.text);

@@ -437,7 +437,9 @@
 	Layer Edges	Ivice sloja
 	Developer	Programer
 	Canvas Outlines	Konture platna
-	Widget Outlines	Konture vidžeta
+	Widget Hits	Pogoci vidžeta
+	Widget Wireframes	Konture vidžeta
+	Widget Focus	Fokus vidžeta
 	Isolate Layers	Izoluj slojeve
 	Layer Content Options…	Opcije sadržaja sloja…
 	Fill Content	Sadržaj popune
