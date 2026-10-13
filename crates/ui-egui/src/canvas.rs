@@ -1810,6 +1810,9 @@ fn documents(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
 }
 
 fn documents_body(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
+    // Home screen and empty workspace never reach the document view; still need a sane rect for
+    // View › Developer › Canvas Outlines (the default 800×600 at the origin is often clipped).
+    app.last_canvas_rect = ui.max_rect();
     app.drop_canvas_rect = None;
     app.tab_strip = None;
     retain_gpu_documents(app);

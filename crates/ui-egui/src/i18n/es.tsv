@@ -447,6 +447,8 @@
 	Layer Edges	Bordes de capa
 	Developer	Desarrollador
 	Canvas Outlines	Contornos del lienzo
+	UI Outlines	Contornos de widgets
+	Widget Outlines	Contornos de widgets
 	Widget Hits	Aciertos de widgets
 	Widget Wireframes	Contornos de widgets
 	Widget Focus	Foco del widget

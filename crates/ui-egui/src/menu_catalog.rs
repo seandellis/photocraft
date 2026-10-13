@@ -680,6 +680,8 @@ pub static CATALOG: &[(&[&str], &str, Option<&str>, &str)] = &[
     (&["View", "Show"], "All", None, "view.show.all"),
     (&["View", "Show"], "Show Extras Options…", None, "view.show.showExtrasOptions"),
     (&["View", "Developer"], "Canvas Outlines", None, "view.developer.canvasOutlines"),
+    (&["View", "Developer"], "UI Outlines", None, "view.developer.uiOutlines"),
+    (&["View", "Developer"], "Widget Outlines", None, "view.developer.widgetOutlines"),
     (&["View", "Developer"], "Widget Hits", None, "view.developer.widgetHits"),
     (&["View", "Developer"], "Widget Wireframes", None, "view.developer.widgetWireframes"),
     (&["View", "Developer"], "Widget Focus", None, "view.developer.widgetFocus"),

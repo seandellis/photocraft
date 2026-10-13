@@ -447,6 +447,8 @@
 	Layer Edges	レイヤーの端
 	Developer	開発者
 	Canvas Outlines	キャンバスの輪郭
+	UI Outlines	ウィジェットの輪郭
+	Widget Outlines	ウィジェットの輪郭
 	Widget Hits	ウィジェットヒット
 	Widget Wireframes	ウィジェットの輪郭
 	Widget Focus	ウィジェットのフォーカス

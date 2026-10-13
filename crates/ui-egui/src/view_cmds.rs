@@ -77,6 +77,8 @@ impl Default for SnapTo {
 pub struct Developer {
     /// Document/tool interaction geometry wireframes on the canvas.
     pub canvas_outlines: bool,
+    /// Interactive egui widget rects only: strokes, no labels or egui debug hover (all builds).
+    pub ui_outlines: bool,
     /// egui widgets under the pointer (`show_widget_hits`; debug builds only).
     pub widget_hits: bool,
     /// egui rects on every interactive widget (`show_interactive_widgets`).
@@ -89,6 +91,17 @@ impl Developer {
     /// Any egui widget-debug overlay flag is on (each still gated by View › Extras).
     pub fn any_widget_debug(&self) -> bool {
         self.widget_hits || self.widget_wireframes || self.widget_focus
+    }
+
+    /// Pre-split **Widget Outlines** menu: all three egui widget debug modes together.
+    pub fn widget_outlines_legacy(&self) -> bool {
+        self.widget_hits && self.widget_wireframes && self.widget_focus
+    }
+
+    pub fn set_widget_outlines_legacy(&mut self, on: bool) {
+        self.widget_hits = on;
+        self.widget_wireframes = on;
+        self.widget_focus = on;
     }
 }
 
@@ -285,6 +298,7 @@ fn snap_slot<'a>(s: &'a mut SnapTo, key: &str) -> Option<&'a mut bool> {
 fn developer_slot<'a>(s: &'a mut Developer, key: &str) -> Option<&'a mut bool> {
     Some(match key {
         "canvasOutlines" => &mut s.canvas_outlines,
+        "uiOutlines" => &mut s.ui_outlines,
         "widgetHits" => &mut s.widget_hits,
         "widgetWireframes" => &mut s.widget_wireframes,
         "widgetFocus" => &mut s.widget_focus,
@@ -434,7 +448,7 @@ pub fn handles(id: &str) -> bool {
         return show_slot(&mut Show::default(), k).is_some() || k == "all";
     }
     if let Some(k) = id.strip_prefix("view.developer.") {
-        return developer_slot(&mut Developer::default(), k).is_some() || k == "all";
+        return developer_slot(&mut Developer::default(), k).is_some() || k == "all" || k == "widgetOutlines";
     }
     if let Some(k) = id.strip_prefix("view.snapTo.") {
         return snap_slot(&mut SnapTo::default(), k).is_some() || k == "all" || k == "none";
@@ -533,10 +547,14 @@ pub fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
         if k == "all" {
             return Some(
                 o.developer.canvas_outlines
+                    && o.developer.ui_outlines
                     && o.developer.widget_hits
                     && o.developer.widget_wireframes
                     && o.developer.widget_focus,
             );
+        }
+        if k == "widgetOutlines" {
+            return Some(o.developer.widget_outlines_legacy());
         }
         let mut s = o.developer;
         return developer_slot(&mut s, k).map(|b| *b);
@@ -735,11 +753,20 @@ fn run(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, p: &Value) -> Res
     if let Some(k) = id.strip_prefix("view.developer.") {
         if k == "all" {
             o.developer.canvas_outlines = true;
+            o.developer.ui_outlines = true;
             o.developer.widget_hits = true;
             o.developer.widget_wireframes = true;
             o.developer.widget_focus = true;
             o.extras = true;
             return Ok(json!(true));
+        }
+        if k == "widgetOutlines" {
+            let on = flag_param(p, o.developer.widget_outlines_legacy());
+            o.developer.set_widget_outlines_legacy(on);
+            if on {
+                o.extras = true;
+            }
+            return Ok(json!(on));
         }
         let slot = developer_slot(&mut o.developer, k).ok_or("unknown Developer item")?;
         *slot = flag_param(p, *slot);

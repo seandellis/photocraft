@@ -449,6 +449,8 @@
 	Layer Edges	图层边缘
 	Developer	开发人员
 	Canvas Outlines	画布轮廓
+	UI Outlines	控件轮廓
+	Widget Outlines	控件轮廓
 	Widget Hits	控件命中
 	Widget Wireframes	控件轮廓
 	Widget Focus	控件焦点

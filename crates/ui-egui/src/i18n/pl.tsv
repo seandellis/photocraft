@@ -445,6 +445,8 @@
 	Layer Edges	Krawędzie warstwy
 	Developer	Programista
 	Canvas Outlines	Kontury płótna
+	UI Outlines	Kontury widżetów
+	Widget Outlines	Kontury widżetów
 	Widget Hits	Trafienia widżetów
 	Widget Wireframes	Kontury widżetów
 	Widget Focus	Fokus widżetu

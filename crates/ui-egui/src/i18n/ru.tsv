@@ -1918,6 +1918,8 @@
 	Layer Edges	Границы слоя
 	Developer	Разработчик
 	Canvas Outlines	Контуры холста
+	UI Outlines	Контуры виджетов
+	Widget Outlines	Контуры виджетов
 	Widget Hits	Попадания по виджетам
 	Widget Wireframes	Контуры виджетов
 	Widget Focus	Фокус виджета

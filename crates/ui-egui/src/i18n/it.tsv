@@ -445,6 +445,8 @@
 	Layer Edges	Bordi livello
 	Developer	Sviluppatore
 	Canvas Outlines	Contorni area di lavoro
+	UI Outlines	Contorni widget
+	Widget Outlines	Contorni widget
 	Widget Hits	Hit widget
 	Widget Wireframes	Contorni widget
 	Widget Focus	Focus widget

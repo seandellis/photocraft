@@ -454,6 +454,8 @@
 	Layer Edges	圖層邊緣
 	Developer	開發人員
 	Canvas Outlines	畫布輪廓
+	UI Outlines	控制項輪廓
+	Widget Outlines	控制項輪廓
 	Widget Hits	控制項命中
 	Widget Wireframes	控制項輪廓
 	Widget Focus	控制項焦點

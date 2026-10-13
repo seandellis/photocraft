@@ -1897,6 +1897,8 @@
 	Layer Edges	Краї шару
 	Developer	Розробник
 	Canvas Outlines	Контури полотна
+	UI Outlines	Контури віджетів
+	Widget Outlines	Контури віджетів
 	Widget Hits	Влучання по віджетах
 	Widget Wireframes	Контури віджетів
 	Widget Focus	Фокус віджета

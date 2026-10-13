@@ -1,5 +1,7 @@
 //! View › Developer outline overlays.
 //!
+//! - **UI Outlines** strokes interactive egui widget rects from the last pass (no labels, no egui
+//!   debug hover); works in release builds too.
 //! - **Widget Hits / Wireframes / Focus** flip egui [`egui::style::DebugOptions`] (debug builds
 //!   only). Hits-only is the lightest mode; wireframes paint every interactive widget and egui's
 //!   "Widgets in order" stack text under the pointer.
@@ -9,12 +11,45 @@
 //! All are visible only while View › Extras is on and the matching Developer flag is on
 //! ([`crate::view_cmds::ViewOptions::shows`]).
 
-use egui::{Color32, Rect, Stroke};
+use egui::{Color32, Id, LayerId, Order, Rect, Stroke};
 
 use crate::PhotocraftApp;
 use crate::canvas::ViewXform;
 use crate::theme::Tokens;
 use crate::view_cmds::ViewOptions;
+
+/// Foreground layer so developer outlines are not buried under canvas painting in the same panel.
+fn outline_painter(ctx: &egui::Context) -> egui::Painter {
+    ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("photocraft_dev_outlines")))
+}
+
+/// Canvas rect to outline: the document view updates [`PhotocraftApp::last_canvas_rect`]; otherwise
+/// use the central panel bounds (home screen, empty workspace, stale defaults at the origin).
+pub(crate) fn canvas_outline_rect(stored: Rect, central: Rect) -> Rect {
+    if stored.width() < 1.0 || stored.height() < 1.0 || !central.expand(4.0).intersects(stored) {
+        return central;
+    }
+    // Default `last_canvas_rect` is 800×600 at (0,0); it intersects a real central panel but is
+    // not the drawable document area.
+    let inset = stored.min.y >= central.min.y - 4.0 && stored.max.x <= central.max.x + 4.0;
+    if inset { stored } else { central }
+}
+
+/// Stroke interactive widget rects from the previous pass (View › Developer › UI Outlines).
+pub fn paint_ui_outlines(ctx: &egui::Context, view: &ViewOptions) {
+    if !view.shows(view.developer.ui_outlines) {
+        return;
+    }
+    let t = Tokens::get(ctx);
+    let painter = outline_painter(ctx);
+    let stroke = Stroke::new(1.0, t.accent);
+    // `interactive_rects_last_pass` is from the completed prior pass (one frame behind).
+    for rect in ctx.interactive_rects_last_pass() {
+        if rect.is_finite() && rect.width() > 0.5 && rect.height() > 0.5 {
+            painter.rect_stroke(rect, 0.0, stroke, egui::StrokeKind::Outside);
+        }
+    }
+}
 
 /// Sync egui's debug overlays with View › Developer widget modes (and Extras).
 ///
@@ -24,10 +59,13 @@ pub fn sync_widget_outline_debug(ctx: &egui::Context, view: &ViewOptions) {
     {
         let extras = view.extras;
         let dev = &view.developer;
+        // Wireframes mode used to include pointer hits; keep that so the stack under the cursor
+        // is visible without a second menu toggle.
+        let pointer_hits = dev.widget_hits || dev.widget_wireframes;
         // Both dark and light styles: Appearance Mode can switch without reopening the menu.
         ctx.all_styles_mut(|s| {
             let d = &mut s.debug;
-            d.show_widget_hits = extras && dev.widget_hits;
+            d.show_widget_hits = extras && pointer_hits;
             d.show_interactive_widgets = extras && dev.widget_wireframes;
             d.show_focused_widget = extras && dev.widget_focus;
             if !dev.any_widget_debug() {
@@ -51,14 +89,16 @@ pub fn paint_canvas_outlines(app: &PhotocraftApp, ui: &egui::Ui) {
         return;
     }
     let t = Tokens::get(ui.ctx());
-    let painter = ui.painter();
-    let stroke = Stroke::new(1.0, t.accent);
+    let painter = outline_painter(ui.ctx());
+    let stroke = Stroke::new(1.5, t.accent);
     let label_color = t.accent_text;
 
+    let central = ui.max_rect();
+    let canvas_rect = canvas_outline_rect(app.last_canvas_rect, central);
     // Full canvas widget and the drawable area inside the rulers.
-    outline_rect(painter, app.last_canvas_rect, "canvas", stroke, label_color);
-    let content = crate::rulers::content_rect(app, app.last_canvas_rect);
-    outline_rect(painter, content, "ruler_content", stroke, label_color);
+    outline_rect(&painter, canvas_rect, "canvas", stroke, label_color);
+    let content = crate::rulers::content_rect(app, canvas_rect);
+    outline_rect(&painter, content, "ruler_content", stroke, label_color);
 
     let Some(xf) = ViewXform::active(app) else { return };
     let Some(st) = app.session.active() else { return };
@@ -66,19 +106,19 @@ pub fn paint_canvas_outlines(app: &PhotocraftApp, ui: &egui::Ui) {
 
     // Same mapping the active view uses for the document image.
     let image = xf.doc_rect(doc.bounds());
-    outline_rect(painter, image, "image", stroke, label_color);
+    outline_rect(&painter, image, "image", stroke, label_color);
 
     if let Some(b) = layer_content_bounds(app) {
-        outline_rect(painter, xf.doc_rect(b), "layer_edges", stroke, label_color);
+        outline_rect(&painter, xf.doc_rect(b), "layer_edges", stroke, label_color);
     }
     if let Some(b) = selection_bounds(app) {
-        outline_rect(painter, xf.doc_rect(b), "selection", stroke, label_color);
+        outline_rect(&painter, xf.doc_rect(b), "selection", stroke, label_color);
     }
     if let Some(r) = transform_doc_rect(app) {
-        outline_rect(painter, xf.doc_rect(r), "transform", stroke, label_color);
+        outline_rect(&painter, xf.doc_rect(r), "transform", stroke, label_color);
     }
     if let Some(r) = crop_doc_rect(app) {
-        outline_rect(painter, xf.doc_rect(r), "crop", stroke, label_color);
+        outline_rect(&painter, xf.doc_rect(r), "crop", stroke, label_color);
     }
 }
 
@@ -127,6 +167,7 @@ fn crop_doc_rect(app: &PhotocraftApp) -> Option<photocraft_geom::Rect> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use egui::{Pos2, vec2};
     use serde_json::json;
 
     fn app() -> (PhotocraftApp, egui::Context) {
@@ -134,6 +175,21 @@ mod tests {
         app.run("file.new", json!({"width": 64, "height": 48})).unwrap();
         app.sync_views();
         (app, egui::Context::default())
+    }
+
+    #[test]
+    fn ui_outlines_noop_when_off() {
+        let (app, ctx) = app();
+        paint_ui_outlines(&ctx, &app.ui.view);
+    }
+
+    #[test]
+    fn canvas_outline_rect_uses_central_when_stored_is_stale() {
+        let central = Rect::from_min_size(Pos2::new(40.0, 80.0), vec2(900.0, 700.0));
+        let stale = Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
+        assert_eq!(canvas_outline_rect(stale, central), central);
+        let inner = Rect::from_min_size(Pos2::new(50.0, 120.0), vec2(400.0, 300.0));
+        assert_eq!(canvas_outline_rect(inner, central), inner);
     }
 
     #[test]
@@ -149,6 +205,7 @@ mod tests {
         app.ui.view.developer.widget_wireframes = true;
         sync_widget_outline_debug(&ctx, &app.ui.view);
         assert!(ctx.global_style().debug.show_interactive_widgets);
+        assert!(ctx.global_style().debug.show_widget_hits);
         app.ui.view.developer.widget_focus = true;
         sync_widget_outline_debug(&ctx, &app.ui.view);
         assert!(ctx.global_style().debug.show_focused_widget);

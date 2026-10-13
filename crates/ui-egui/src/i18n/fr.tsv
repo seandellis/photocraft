@@ -437,6 +437,8 @@
 	Layer Edges	Contours du calque
 	Developer	Développeur
 	Canvas Outlines	Contours du canevas
+	UI Outlines	Contours des widgets
+	Widget Outlines	Contours des widgets
 	Widget Hits	Cibles sous le curseur
 	Widget Wireframes	Contours des widgets
 	Widget Focus	Focus widget

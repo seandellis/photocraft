@@ -133,7 +133,9 @@ Keys are the field names of `theme::Tokens` (`crates/ui-egui/src/theme.rs`). Edi
 
 **View › Developer** (after View › Show) toggles layout wireframes for debugging UI hit areas:
 
-- **Canvas Outlines** — document image, rulers content, selection/transform/crop/layer bounds
+- **Canvas Outlines** — document image, rulers content, selection/transform/crop/layer bounds (works in release builds)
+- **UI Outlines** — interactive egui widget hit rects as strokes only (no labels, no egui debug hover; release or debug)
+- **Widget Outlines** — all egui widget debug modes at once (same as the pre-split toggle; debug builds only)
 - **Widget Hits** — widgets under the pointer only (`show_widget_hits`; debug builds)
 - **Widget Wireframes** — every interactive egui rect plus the pointer stack text (`show_interactive_widgets`)
 - **Widget Focus** — keyboard-focus highlight (`show_focused_widget`)

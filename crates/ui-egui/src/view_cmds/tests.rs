@@ -64,6 +64,7 @@ fn developer_outlines_toggle_and_extras_gate() {
     let (mut app, ctx) = app_with(1);
     for id in [
         "view.developer.canvasOutlines",
+        "view.developer.uiOutlines",
         "view.developer.widgetHits",
         "view.developer.widgetWireframes",
         "view.developer.widgetFocus",
@@ -103,7 +104,7 @@ fn developer_all_checked_when_every_outline_flag_on() {
     let (mut app, ctx) = app_with(0);
     assert_eq!(checked(&app, "view.developer.all"), Some(false));
     menu(&mut app, &ctx, "view.developer.all", json!({})).unwrap();
-    assert!(app.ui.view.developer.canvas_outlines);
+    assert!(app.ui.view.developer.canvas_outlines && app.ui.view.developer.ui_outlines);
     assert!(app.ui.view.developer.widget_hits && app.ui.view.developer.widget_wireframes && app.ui.view.developer.widget_focus);
     assert!(app.ui.view.extras);
     assert_eq!(checked(&app, "view.developer.all"), Some(true));

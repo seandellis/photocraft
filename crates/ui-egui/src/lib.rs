@@ -1762,25 +1762,27 @@ impl eframe::App for PhotocraftApp {
         // system title bar this is where the document name lives, as the in-app title is hidden.
         panels::sync_window_title(self, &ctx);
         let chrome = !self.ui.view.hides_chrome();
+        // Top-level [`egui::Panel`]s must attach to the root `Ui` (not a `push_id` child), or layout
+        // collapses to a full-window central fill with no toolbar/dock (#dev outlines).
         if chrome && self.ui.panels.menu_bar {
-            ui.push_id(egui::IdSalt::new("chrome_title_bar"), |ui| panels::title_bar(self, ui));
+            panels::title_bar(self, ui);
         }
         if chrome && self.ui.panels.options_bar {
-            ui.push_id(egui::IdSalt::new("chrome_options_bar"), |ui| panels::options_bar(self, ui));
+            panels::options_bar(self, ui);
         }
         if chrome && self.ui.panels.status_bar {
-            ui.push_id(egui::IdSalt::new("chrome_status_bar"), |ui| panels::status_bar(self, ui));
+            panels::status_bar(self, ui);
         }
         if chrome && self.ui.panels.toolbar {
-            ui.push_id(egui::IdSalt::new("chrome_toolbar"), |ui| panels::toolbar(self, ui));
+            panels::toolbar(self, ui);
         }
         if chrome && self.ui.panels.dock {
-            ui.push_id(egui::IdSalt::new("chrome_dock"), |ui| panels::right_dock(self, ui));
+            panels::right_dock(self, ui);
         }
         let t = theme::Tokens::get(&ctx);
         let backdrop = if chrome { prefs_ui::pasteboard_color(self).unwrap_or(t.canvas) } else { egui::Color32::BLACK };
         egui::CentralPanel::default().frame(egui::Frame::NONE.fill(backdrop)).show(ui, |ui| {
-            ui.push_id(egui::IdSalt::new("central"), |ui| canvas::document_area(self, ui));
+            canvas::document_area(self, ui);
         });
         panels::properties_window(self, &ctx);
         brush_panel::window(self, &ctx);
@@ -1807,6 +1809,8 @@ impl eframe::App for PhotocraftApp {
         if self.custom_titlebar {
             titlebar::resize_zones(ui);
         }
+        // View › Developer › UI Outlines: stroke-only widget rects (after the full UI tree).
+        debug_outlines::paint_ui_outlines(&ctx, &self.ui.view);
         // A device lost while drawing this frame: switch to the CPU canvas before the next one.
         gpu_status::check(self, &ctx);
         // The Brush Preset picker's view (its gear's card parts and the footer scale) is
