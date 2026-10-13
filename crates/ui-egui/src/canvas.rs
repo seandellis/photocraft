@@ -1787,6 +1787,8 @@ pub(crate) fn retain_gpu_documents(app: &mut PhotocraftApp) {
 /// another document (`layer_transfer`).
 pub fn document_area(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     documents(app, ui);
+    // View › Developer › Canvas Outlines (Extras-gated); after chrome so wireframes sit on top.
+    crate::debug_outlines::paint_canvas_outlines(app, ui);
     crate::layer_transfer::finish(app, ui.ctx());
     // Once a frame, not per document view: the right-click or options-bar Brush Preset picker.
     crate::paint_mouse::show_picker(app, ui.ctx());

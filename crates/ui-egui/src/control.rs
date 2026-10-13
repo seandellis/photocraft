@@ -1242,6 +1242,11 @@ pub fn inspect(app: &PhotocraftApp, ctx: &egui::Context) -> Value {
     if let Some((kind, fields)) = &app.ui.shell.dialog {
         dialogs.push(json!({"id": SHELL_DIALOG, "kind": kind, "title": crate::workspace_ui::title(kind), "fields": fields}));
     }
+    // `developer` is `#[serde(skip)]` on ViewOptions (session-only); re-attach for agents.
+    let mut view = serde_json::to_value(&app.ui.view).unwrap_or_else(|_| json!({}));
+    if let Some(obj) = view.as_object_mut() {
+        obj.insert("developer".into(), serde_json::to_value(app.ui.view.developer).unwrap_or_else(|_| json!({})));
+    }
     json!({
         "window": {"width": screen.width(), "height": screen.height(), "pixelsPerPoint": ctx.pixels_per_point()},
         "tool": app.ui.tool,
@@ -1284,7 +1289,7 @@ pub fn inspect(app: &PhotocraftApp, ctx: &egui::Context) -> Value {
         "docking": app.ui.docking,
         "dockingHidden": app.ui.docking_hidden,
         "dockingCollapsed": app.ui.docking_collapsed,
-        "view": app.ui.view,
+        "view": view,
         "views": app.ui.views,
         "dialogs": dialogs,
         "windows": app.ui.windows,

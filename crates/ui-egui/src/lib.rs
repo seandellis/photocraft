@@ -65,6 +65,7 @@ pub mod crop_ui;
 pub mod delete_layer_prompt;
 pub mod dialog_alt_reset;
 pub mod dialog_blend_ui;
+pub mod debug_outlines;
 pub mod dialogs;
 pub mod direct_select;
 pub mod direction;
@@ -1635,6 +1636,8 @@ impl eframe::App for PhotocraftApp {
         if self.live_tokens.poll(ctx, self.ui.theme) {
             self.checker = None;
         }
+        // View › Developer › Widget Outlines (Extras-gated); no-op in release builds.
+        debug_outlines::sync_widget_outline_debug(ctx, &self.ui.view);
         self.drain_control(ctx);
         native_menu::run(self, ctx);
         // Switching tools commits, also between the Type and Type Mask tools.

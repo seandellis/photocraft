@@ -129,6 +129,16 @@ By default PhotoCraft's own crates log at `info` and everything else at `warn`. 
 
 Keys are the field names of `theme::Tokens` (`crates/ui-egui/src/theme.rs`). Edit and save the file while the app runs to see changes immediately, with no recompile. This is compiled out of release builds.
 
+### View › Developer outlines
+
+**View › Developer** (after View › Show) toggles layout wireframes for debugging UI hit areas:
+
+- **Canvas Outlines** — document image, rulers content, selection/transform/crop/layer bounds
+- **Widget Outlines** — egui interactive widgets (debug builds only; uses egui `DebugOptions`)
+- **All** — turns both on (and View › Extras)
+
+Outlines are visible only while **View › Extras** is on (same gate as View › Show). The Developer flags themselves are session-only and are not saved to `ui.ron`.
+
 ## Driving the app programmatically
 
 Start the app with a private token file. It then accepts authenticated JSON lines on `127.0.0.1:7878`:

@@ -69,6 +69,18 @@ impl Default for SnapTo {
     }
 }
 
+/// View › Developer overlay toggles (session-only; not written to `ui.ron`).
+///
+/// Visibility still goes through [`ViewOptions::shows`] with View › Extras, like Show flags.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Developer {
+    /// Document/tool interaction geometry wireframes on the canvas.
+    pub canvas_outlines: bool,
+    /// egui interactive widget rects (debug builds only; see `debug_outlines`).
+    pub widget_outlines: bool,
+}
+
 /// View-, window- and type-preference state of the shell.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -99,6 +111,10 @@ pub struct ViewOptions {
     /// Developer overlay of the active layer's storage tiles (tile_overlay.rs), set with the
     /// control channel's `ui.set {"tileGrid": true}`.
     pub tile_grid: bool,
+    /// View › Developer outline toggles. Skipped in serde so they never land in `ui.ron`;
+    /// `ui.inspect` re-attaches them (see `control::inspect`).
+    #[serde(skip)]
+    pub developer: Developer,
 }
 
 /// Factory New Guide Layout values (Alt+Reset and a fresh ViewOptions).
@@ -125,6 +141,7 @@ impl Default for ViewOptions {
             middle_eastern_composer: false,
             guide_layout: default_guide_layout(),
             tile_grid: false,
+            developer: Developer::default(),
         }
     }
 }
@@ -250,6 +267,14 @@ fn snap_slot<'a>(s: &'a mut SnapTo, key: &str) -> Option<&'a mut bool> {
         "layers" => &mut s.layers,
         "slices" => &mut s.slices,
         "documentBounds" => &mut s.document_bounds,
+        _ => return None,
+    })
+}
+
+fn developer_slot<'a>(s: &'a mut Developer, key: &str) -> Option<&'a mut bool> {
+    Some(match key {
+        "canvasOutlines" => &mut s.canvas_outlines,
+        "widgetOutlines" => &mut s.widget_outlines,
         _ => return None,
     })
 }
@@ -395,6 +420,9 @@ pub fn handles(id: &str) -> bool {
     if let Some(k) = id.strip_prefix("view.show.") {
         return show_slot(&mut Show::default(), k).is_some() || k == "all";
     }
+    if let Some(k) = id.strip_prefix("view.developer.") {
+        return developer_slot(&mut Developer::default(), k).is_some() || k == "all";
+    }
     if let Some(k) = id.strip_prefix("view.snapTo.") {
         return snap_slot(&mut SnapTo::default(), k).is_some() || k == "all" || k == "none";
     }
@@ -486,6 +514,14 @@ pub fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
     if let Some(k) = id.strip_prefix("view.show.") {
         let mut s = o.show;
         return show_slot(&mut s, k).map(|b| *b);
+    }
+    if let Some(k) = id.strip_prefix("view.developer.") {
+        // Stored flags (not extras-gated), same as Show items. `all` is checked when both are on.
+        if k == "all" {
+            return Some(o.developer.canvas_outlines && o.developer.widget_outlines);
+        }
+        let mut s = o.developer;
+        return developer_slot(&mut s, k).map(|b| *b);
     }
     if let Some(k) = id.strip_prefix("view.snapTo.") {
         let mut s = o.snap_to;
@@ -674,6 +710,22 @@ fn run(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, p: &Value) -> Res
         let v = *slot;
         if v {
             // Showing an item turns Extras back on, as in Photoshop.
+            o.extras = true;
+        }
+        return Ok(json!(v));
+    }
+    if let Some(k) = id.strip_prefix("view.developer.") {
+        if k == "all" {
+            o.developer.canvas_outlines = true;
+            o.developer.widget_outlines = true;
+            o.extras = true;
+            return Ok(json!(true));
+        }
+        let slot = developer_slot(&mut o.developer, k).ok_or("unknown Developer item")?;
+        *slot = flag_param(p, *slot);
+        let v = *slot;
+        if v {
+            // Showing an outline turns Extras back on, same as View › Show.
             o.extras = true;
         }
         return Ok(json!(v));

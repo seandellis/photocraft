@@ -60,6 +60,51 @@ fn show_snap_extras_and_screen_modes_are_state() {
 }
 
 #[test]
+fn developer_outlines_toggle_and_extras_gate() {
+    let (mut app, ctx) = app_with(1);
+    for id in ["view.developer.canvasOutlines", "view.developer.widgetOutlines", "view.developer.all"] {
+        assert!(is_live(id), "{id}");
+    }
+    assert_eq!(checked(&app, "view.developer.canvasOutlines"), Some(false));
+    assert_eq!(checked(&app, "view.developer.widgetOutlines"), Some(false));
+    assert_eq!(checked(&app, "view.developer.all"), Some(false));
+
+    menu(&mut app, &ctx, "view.developer.canvasOutlines", json!({})).unwrap();
+    assert!(app.ui.view.developer.canvas_outlines);
+    assert!(app.ui.view.extras);
+    assert!(app.ui.view.shows(app.ui.view.developer.canvas_outlines));
+    assert_eq!(checked(&app, "view.developer.canvasOutlines"), Some(true));
+    assert_eq!(checked(&app, "view.developer.all"), Some(false));
+
+    // Extras off hides outlines without clearing Developer flags (same as Show › Layer Edges).
+    menu(&mut app, &ctx, "view.extras", json!({})).unwrap();
+    assert!(!app.ui.view.extras);
+    assert!(app.ui.view.developer.canvas_outlines);
+    assert!(!app.ui.view.shows(app.ui.view.developer.canvas_outlines));
+    assert_eq!(checked(&app, "view.developer.canvasOutlines"), Some(true));
+
+    // Turning a Developer item on brings Extras back.
+    menu(&mut app, &ctx, "view.developer.widgetOutlines", json!({})).unwrap();
+    assert!(app.ui.view.extras && app.ui.view.developer.widget_outlines);
+
+    // Session-only: not written with the rest of ViewOptions (ui.ron).
+    let v = serde_json::to_value(&app.ui.view).unwrap();
+    assert!(v.get("developer").is_none());
+}
+
+#[test]
+fn developer_all_checked_when_both_flags_on() {
+    let (mut app, ctx) = app_with(0);
+    assert_eq!(checked(&app, "view.developer.all"), Some(false));
+    menu(&mut app, &ctx, "view.developer.all", json!({})).unwrap();
+    assert!(app.ui.view.developer.canvas_outlines && app.ui.view.developer.widget_outlines);
+    assert!(app.ui.view.extras);
+    assert_eq!(checked(&app, "view.developer.all"), Some(true));
+    assert_eq!(checked(&app, "view.developer.canvasOutlines"), Some(true));
+    assert_eq!(checked(&app, "view.developer.widgetOutlines"), Some(true));
+}
+
+#[test]
 fn full_screen_and_maximized_never_overlap_on_windows() {
     use egui::ViewportCommand::{Fullscreen, Maximized};
     // Maximized → full screen: un-maximize first, and remember it.
