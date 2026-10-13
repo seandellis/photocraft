@@ -58,9 +58,10 @@ in the dialog.
 | Web | `photocraft-web-<v>.zip` (static site; see [`packaging/web/README.md`](../packaging/web/README.md)) | `ubuntu-latest` |
 
 Every binary reports its version, the commit and the build date: `photocraft --version`,
-`photocraft-cli --version`, and *Help › About PhotoCraft*. CI sets `PHOTOCRAFT_BUILD_SHA` and
-`PHOTOCRAFT_BUILD_DATE`, and `crates/engine/src/build_info.rs` reads them at compile time. A plain
-`cargo build` doesn't set them and reports `0.2.0 (dev build)`.
+`photocraft-cli --version`, and *Help › About PhotoCraft*. Packaging sets `PHOTOCRAFT_BUILD_SHA`,
+`PHOTOCRAFT_BUILD_DATE`, `PHOTOCRAFT_BUILD_BRANCH`, and `PHOTOCRAFT_BUILD_UNIX`; local builds
+can also fill these via `crates/engine/build.rs` when git is available. Without provenance the
+build reports `(dev build)`. The home screen shows branch and build time when baked.
 
 Every desktop build job (macOS, Windows, Linux, FreeBSD) also checks out [craft-fonts](https://github.com/storytold/craft-fonts)
 at the `craft-fonts-ref` commit in `.github/workflows/release.yml` and builds with `CRAFT_FONTS_DIR` and

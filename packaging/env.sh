@@ -5,8 +5,10 @@
 #   ROOT                    workspace root
 #   VERSION                 [workspace.package] version from Cargo.toml (override: PHOTOCRAFT_VERSION)
 #   DIST                    output directory for release artifacts (default: $ROOT/dist/release)
-#   PHOTOCRAFT_BUILD_SHA    git commit baked into the binaries (see crates/engine/src/build_info.rs)
-#   PHOTOCRAFT_BUILD_DATE   UTC build date, YYYY-MM-DD
+#   PHOTOCRAFT_BUILD_SHA         git commit baked into the binaries (see crates/engine/src/build_info.rs)
+#   PHOTOCRAFT_BUILD_DATE        UTC build date, YYYY-MM-DD
+#   PHOTOCRAFT_BUILD_BRANCH      git branch (omitted when detached HEAD)
+#   PHOTOCRAFT_BUILD_UNIX        Unix seconds when the binary was built (home screen uses UI locale)
 #   CARGO_TARGET_DIR        cargo's target dir (default: $ROOT/target)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -37,6 +39,12 @@ if [ -z "${PHOTOCRAFT_BUILD_SHA:-}" ]; then
 fi
 export PHOTOCRAFT_BUILD_SHA
 export PHOTOCRAFT_BUILD_DATE="${PHOTOCRAFT_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
+_branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+if [ -z "${PHOTOCRAFT_BUILD_BRANCH:-}" ] && [ -n "$_branch" ] && [ "$_branch" != "HEAD" ]; then
+  export PHOTOCRAFT_BUILD_BRANCH="$_branch"
+fi
+unset _branch
+export PHOTOCRAFT_BUILD_UNIX="${PHOTOCRAFT_BUILD_UNIX:-$(date +%s)}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 
 # Emit a GitHub Actions warning (plain stderr outside Actions).

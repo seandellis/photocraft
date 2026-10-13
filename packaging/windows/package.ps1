@@ -53,6 +53,13 @@ New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 
 if (-not $env:PHOTOCRAFT_BUILD_SHA) { $env:PHOTOCRAFT_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null) }
 if (-not $env:PHOTOCRAFT_BUILD_DATE) { $env:PHOTOCRAFT_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') }
+if (-not $env:PHOTOCRAFT_BUILD_BRANCH) {
+  $b = git -C $Root rev-parse --abbrev-ref HEAD 2>$null
+  if ($b -and $b -ne 'HEAD') { $env:PHOTOCRAFT_BUILD_BRANCH = $b }
+}
+if (-not $env:PHOTOCRAFT_BUILD_UNIX) {
+  $env:PHOTOCRAFT_BUILD_UNIX = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+}
 
 Write-Output "PhotoCraft $Version for Windows $Arch ($Target)"
 

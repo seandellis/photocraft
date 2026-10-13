@@ -2373,7 +2373,11 @@ fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     // File › Open Recent, newest first (on the web there are no paths to reopen).
     let recent: Vec<String> = if cfg!(target_arch = "wasm32") { Vec::new() } else { app.ui.recent_files.iter().take(HOME_RECENT).cloned().collect() };
     let recent_h = if recent.is_empty() { 0.0 } else { 34.0 + recent.len() as f32 * HOME_RECENT_ROW };
-    let card = Rect::from_center_size(area.center(), egui::vec2(460.0, 330.0 + recent_h));
+    let lang = crate::i18n::Lang::from_pref(&app.session.prefs().interface.language);
+    let version = crate::build_version::home_screen_version(lang);
+    // Fixed slack for the faint build-info block under the links (layout-sized, not precomputed per line).
+    const HOME_VERSION_BLOCK_H: f32 = 32.0;
+    let card = Rect::from_center_size(area.center(), egui::vec2(460.0, 330.0 + recent_h + HOME_VERSION_BLOCK_H));
     let new_label = crate::shortcuts::command_label(app, "New document…", "file.new");
     let open_label = crate::shortcuts::command_label(app, "Open…", "file.open");
     ui.scope_builder(egui::UiBuilder::new().max_rect(card), |ui| {
@@ -2416,11 +2420,94 @@ fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
                 home_recent(app, ui, &recent);
             }
             ui.add_space(26.0);
-            crate::links::discord_button(app, ui, 190.0);
-            ui.add_space(10.0);
-            crate::links::link_row(app, ui);
+            // Full card width so links and build info share one center line (not a shrink-wrapped column).
+            start_screen_footer(app, ui, card.width(), &version, &t);
         });
     });
+}
+
+/// Discord, community links, and build provenance — same full-width row centering as New/Open.
+fn start_screen_footer(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    card_width: f32,
+    version: &photocraft_engine::build_info::HomeScreenVersion,
+    t: &crate::theme::Tokens,
+) {
+    const DISCORD_BTN: f32 = 190.0;
+    start_screen_centered_row(ui, card_width, DISCORD_BTN, |ui| {
+        crate::links::discord_button(app, ui, DISCORD_BTN);
+    });
+    ui.add_space(10.0);
+    crate::links::link_row_with_width(app, ui, card_width);
+    start_screen_version_block(app, ui, version, t);
+}
+
+/// Horizontally centre a fixed-width control in the home card (spacer + `set_width`, like the action buttons).
+fn start_screen_centered_row<R>(ui: &mut egui::Ui, row_width: f32, content_width: f32, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
+    ui.horizontal(|ui| {
+        ui.set_width(row_width);
+        ui.add_space(((row_width - content_width) / 2.0).max(0.0));
+        add(ui)
+    })
+    .inner
+}
+
+/// Build provenance under the home-screen links; centred like the subtitle via [`egui::Label`].
+fn start_screen_version_block(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    version: &photocraft_engine::build_info::HomeScreenVersion,
+    t: &crate::theme::Tokens,
+) {
+    ui.add_space(8.0);
+    let job = start_screen_version_label_job(ui, version, t);
+    let resp = ui
+        .add(egui::Label::new(job).sense(Sense::click()))
+        .on_hover_cursor(egui::CursorIcon::PointingHand)
+        .on_hover_text("Click to copy build info");
+    if resp.clicked() {
+        ui.ctx().copy_text(version.clipboard_text());
+        app.ui.status = "Copied build info".into();
+    }
+}
+
+/// Multiline layout for the home-screen build label (tight leading; lines centred within the block).
+fn start_screen_version_label_job(
+    ui: &egui::Ui,
+    version: &photocraft_engine::build_info::HomeScreenVersion,
+    t: &crate::theme::Tokens,
+) -> egui::text::LayoutJob {
+    const FONT_SIZE: f32 = 11.5;
+    // Slightly below font size so a two-line block reads as one tight unit.
+    const TIGHT_LINE_H: f32 = 17.5;
+    let font = egui::FontId::proportional(FONT_SIZE);
+    let painter = ui.painter();
+    let line_w = |text: &str| painter.layout_no_wrap(text.into(), font.clone(), t.text_faint).size().x;
+    let block_w = version
+        .secondary
+        .as_deref()
+        .map(|s| line_w(s).max(line_w(&version.primary)))
+        .unwrap_or_else(|| line_w(&version.primary));
+    let mut job = egui::text::LayoutJob {
+        halign: egui::Align::Center,
+        wrap: egui::text::TextWrapping { max_width: block_w, ..Default::default() },
+        ..Default::default()
+    };
+    let fmt = || {
+        egui::TextFormat {
+            font_id: font.clone(),
+            color: t.text_faint,
+            line_height: Some(TIGHT_LINE_H),
+            ..Default::default()
+        }
+    };
+    job.append(&version.primary, 0.0, fmt());
+    if let Some(second) = &version.secondary {
+        job.append("\n", 0.0, fmt());
+        job.append(second, 0.0, fmt());
+    }
+    job
 }
 
 /// Wayland has no native file drops (winit 0.30, #386), so the hint offers File › Open and paste.

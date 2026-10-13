@@ -44,6 +44,11 @@ pub fn discord_button(app: &mut PhotocraftApp, ui: &mut egui::Ui, min_width: f32
 /// "PhotoCraft website · GitHub · ArtCraft" as links, centred. Clicks route through [`open`] (the
 /// platform browser service) rather than `ui.hyperlink_to`, which uses the unreliable `ctx.open_url`.
 pub fn link_row(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
+    link_row_with_width(app, ui, ui.available_width());
+}
+
+/// Like [`link_row`], but centres within an explicit row width (the home-screen card uses this).
+pub fn link_row_with_width(app: &mut PhotocraftApp, ui: &mut egui::Ui, row_width: f32) {
     let t = crate::theme::Tokens::get(ui.ctx());
     let links = [(tl!("PhotoCraft website"), APP_PAGE), (tl!("GitHub"), GITHUB), (tl!("ArtCraft"), ARTCRAFT_WEBSITE)];
     let font = egui::FontId::proportional(12.5);
@@ -52,8 +57,9 @@ pub fn link_row(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
         + 2.0 * ui.painter().layout_no_wrap(sep.into(), font.clone(), t.text).size().x;
     let mut clicked: Option<&str> = None;
     ui.horizontal(|ui| {
+        ui.set_width(row_width);
         ui.spacing_mut().item_spacing.x = 0.0;
-        ui.add_space(((ui.available_width() - width) / 2.0).max(0.0));
+        ui.add_space(((row_width - width) / 2.0).max(0.0));
         for (i, (label, url)) in links.iter().enumerate() {
             if i > 0 {
                 ui.label(egui::RichText::new(sep).font(font.clone()).color(t.text_faint));

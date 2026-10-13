@@ -725,7 +725,13 @@ pub fn sync(app: &mut PhotocraftApp, ctx: &egui::Context) {
     let Some(menu) = app.services.native_menu.as_mut() else { return };
     if !menu.logged {
         for c in &layout.clashes {
-            log::info!("menu: {} is {} on macOS and {} in PhotoCraft; {}", c.shortcut, c.system, c.command, c.resolution);
+            log::debug!(
+                "menu: {shortcut} — macOS [{system}] · PhotoCraft [{command}] ({resolution})",
+                shortcut = c.shortcut,
+                system = c.system,
+                command = c.command,
+                resolution = c.resolution,
+            );
         }
         menu.logged = true;
     }
